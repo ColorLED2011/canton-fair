@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Canton">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Canton Fair · COLOR LED</title>
+<style>
+:root{--bg:#f5f4f0;--card:#fff;--tx:#1d1d1b;--tx2:#5f5e5a;--tx3:#8a8880;--bd:#e2e0d9;--ac:#0f766e;--acbg:#e1f5ee;--wa:#854f0b;--wabg:#faeeda;--da:#a32d2d;--dabg:#fcebeb;--ok:#3b6d11;--okbg:#eaf3de;--r:10px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;overscroll-behavior-y:none}
+#app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--card);display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--bd);padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;display:flex;align-items:center;gap:8px}
+header .ttl{flex:1;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+main{flex:1;padding-bottom:86px}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom);max-width:560px;margin:0 auto}
+nav button{background:none;border:0;padding:9px 0 7px;font-size:11px;color:var(--tx3);font-family:inherit}
+nav button.on{color:var(--ac);font-weight:600}
+nav svg{display:block;margin:0 auto 2px;width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+button,input,select,textarea{font-family:inherit;font-size:16px}
+.btn{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:11px 12px;color:var(--tx)}
+.btn.p{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600;width:100%;padding:14px}
+.btn.g{background:var(--bg)}
+.ib{background:none;border:0;padding:6px;color:var(--tx2);position:relative;line-height:0}
+.ib svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.8}
+.bdg{position:absolute;top:0;right:0;background:var(--da);color:#fff;font-size:10px;font-weight:700;border-radius:9px;min-width:17px;height:17px;line-height:17px;text-align:center;padding:0 4px}
+.fl{padding:12px 14px;border-bottom:1px solid var(--bd)}
+.lb{font-size:13px;color:var(--tx2);margin:0 0 7px;line-height:1.45}
+.lb b{color:var(--tx);font-weight:600}
+.req{color:var(--da)}
+.gh{margin:0;padding:16px 14px 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);background:var(--bg)}
+input[type=text],input[type=number],select,textarea{width:100%;padding:11px;border:1px solid var(--bd);border-radius:var(--r);background:var(--card);color:var(--tx)}
+textarea{min-height:64px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .b{flex:1 1 auto;min-width:72px}
+.b{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:11px 8px;font-size:14px;color:var(--tx)}
+.b.on{background:var(--acbg);border-color:var(--ac);color:var(--ac);font-weight:600}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cam{width:100%;border:1.5px dashed var(--bd);border-radius:var(--r);background:var(--bg);padding:18px 10px;color:var(--tx2);font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.shot{position:relative;border-radius:var(--r);overflow:hidden;background:#000}
+.shot img{display:block;width:100%;max-height:230px;object-fit:cover}
+.shot .x{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:16px;width:30px;height:30px;font-size:16px}
+.sum{margin-top:8px;border-radius:var(--r);padding:9px 11px;font-size:13px;line-height:1.5}
+.err{color:var(--da);font-size:13px;margin:6px 0 0}
+.card{display:flex;gap:11px;padding:11px 14px;border-bottom:1px solid var(--bd);align-items:center;background:var(--card)}
+.card .th{width:62px;height:62px;border-radius:var(--r);background:var(--bg);flex-shrink:0;object-fit:cover;display:flex;align-items:center;justify-content:center;color:var(--tx3);font-size:11px}
+.card h3{margin:0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card p{margin:2px 0;font-size:12px;color:var(--tx2)}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+.grp{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--bg);border-bottom:1px solid var(--bd);font-size:14px;font-weight:600}
+.dt{display:flex;justify-content:space-between;gap:12px;padding:9px 14px;border-bottom:1px solid var(--bd);font-size:14px}
+.dt span:first-child{color:var(--tx2);flex-shrink:0}
+.dt span:last-child{text-align:right}
+.hero img{width:100%;max-height:260px;object-fit:cover;display:block}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 14px}
+.tiles div{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--bg)}
+.tiles img{width:100%;height:100%;object-fit:cover}
+.tiles span{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 4px;text-align:center}
+.fab{position:fixed;right:calc(50% - 280px + 16px);bottom:calc(76px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:29px;background:var(--ac);color:#fff;border:0;font-size:30px;line-height:1;box-shadow:0 3px 10px rgba(0,0,0,.25);z-index:4}
+@media(max-width:592px){.fab{right:16px}}
+.full{position:fixed;inset:0;background:#000;z-index:20;display:flex;flex-direction:column;justify-content:center}
+.full img{width:100%;max-height:78vh;object-fit:contain}
+.full .bar{position:absolute;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;display:flex;justify-content:space-between;align-items:center;color:#fff;background:linear-gradient(rgba(0,0,0,.55),transparent)}
+.full .bar button{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:var(--r);padding:8px 12px;font-size:14px}
+.note{font-size:12px;color:var(--tx3);padding:8px 14px;line-height:1.5}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px}
+.stat div{background:var(--bg);border-radius:var(--r);padding:10px 12px}
+.stat p{margin:0;font-size:12px;color:var(--tx2)}
+.stat strong{font-size:24px;font-weight:600}
+.banner{margin:0;padding:8px 14px;font-size:12px;font-weight:600}
+.star{background:none;border:0;font-size:30px;padding:0 4px;color:#d8d5cc}
+.star.on{color:#e6a700}
+.search{padding:10px 14px;border-bottom:1px solid var(--bd)}
+</style>
+</head>
+<body>
+<div id="app"><main><p class="note" style="padding:40px 20px;text-align:center">Cargando…</p></main></div>
+<script>
+/* ---------- utilidades ---------- */
+var ICON={list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',cat:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',flag:'<path d="M4 21V4h14l-2 4 2 4H4"/>',dl:'<path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/>',sync:'<path d="M3 12a9 9 0 0115.5-6.2M21 12a9 9 0 01-15.5 6.2M18 3v5h-5M6 21v-5h5"/>',back:'<path d="M15 5l-7 7 7 7"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',cam:'<path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/>',pen:'<path d="M4 20h4l10-10-4-4L4 16z"/>',trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'};
+function svg(k,s){return '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"'+(s?' style="'+s+'"':'')+'>'+ICON[k]+'</svg>'}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function money(n){return isFinite(n)&&n?'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}
+function num(v){var n=parseFloat(v);return isFinite(n)?n:0}
+function stars(n){return n?'<span style="color:#e6a700">'+'★'.repeat(n)+'</span>':'—'}
+
+/* ---------- base de datos (IndexedDB) ---------- */
+var DB=null;
+function openDB(){return new Promise(function(res,rej){var r=indexedDB.open('cantonfair',1);
+r.onupgradeneeded=function(e){var d=e.target.result;if(!d.objectStoreNames.contains('recs'))d.createObjectStore('recs',{keyPath:'id'});if(!d.objectStoreNames.contains('pics'))d.createObjectStore('pics');};
+r.onsuccess=function(){DB=r.result;res()};r.onerror=function(){rej(r.error)}})}
+function tx(store,mode){return DB.transaction(store,mode).objectStore(store)}
+function dbPut(store,val,key){return new Promise(function(res,rej){var q=tx(store,'readwrite').put(val,key);q.onsuccess=function(){res()};q.onerror=function(){rej(q.error)}})}
+function dbGet(store,key){return new Promise(function(res,rej){var q=tx(store,'readonly').get(key);q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})}
+function dbDel(store,key){return new Promise(function(res){var q=tx(store,'readwrite').delete(key);q.onsuccess=function(){res()};q.onerror=function(){res()}})}
+function dbAll(store){return new Promise(function(res,rej){var q=tx(store,'readonly').getAll();q.onsuccess=function(){res(q.result||[])};q.onerror=function(){rej(q.error)}})}
+
+/* ---------- modelo ---------- */
+var CATS=['Lighting 照明','Faucets 水龙头','Hardware 五金','Machinery 机械'];
+var STATUS=['Por contactar 待联系','Muestra pedida 已索样','Negociando 洽谈中','Descartado 已放弃'];
+var SCOL={'Por contactar 待联系':['var(--wabg)','var(--wa)'],'Muestra pedida 已索样':['var(--okbg)','var(--ok)'],'Negociando 洽谈中':['var(--acbg)','var(--ac)'],'Descartado 已放弃':['var(--dabg)','var(--da)']};
+var PICS=[['booth','Stand 展位'],['product','Producto 产品'],['card','Tarjeta 名片'],['license','Licencia 营业执照'],['catalog','Catálogo 目录']];
+var PORTS=['Shenzhen 深圳','Guangzhou 广州','Ningbo 宁波','Shanghai 上海','Xiamen 厦门','Qingdao 青岛'];
+var CERTS=['CE','RoHS','ISO9001','UL','Ninguna 无'];
+var CAP={'20GP':28,'40GP':58,'40HQ':68},WCAP={'20GP':21700,'40GP':26500,'40HQ':26500};
+var R=[],S={v:'list',sel:null,ph:null,f:null,err:{},open:{},q:''},URLS={};
+
+function picUrl(key){if(URLS[key])return Promise.resolve(URLS[key]);return dbGet('pics',key).then(function(b){if(!b)return null;URLS[key]=URL.createObjectURL(b);return URLS[key]})}
+function catsAll(){var a=CATS.slice();R.forEach(function(r){if(r.cat&&a.indexOf(r.cat)<0)a.push(r.cat)});return a}
+
+/* ---------- cámara y compresión ---------- */
+function shrink(file){return new Promise(function(res){var img=new Image(),u=URL.createObjectURL(file);
+img.onload=function(){var m=1600,w=img.width,h=img.height,s=Math.min(1,m/Math.max(w,h));var c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);
+c.toBlob(function(b){res(b||file)},'image/jpeg',.82)};
+img.onerror=function(){URL.revokeObjectURL(u);res(file)};img.src=u})}
+function pickPhoto(key,cb){var i=document.createElement('input');i.type='file';i.accept='image/*';
+i.onchange=function(){var f=i.files&&i.files[0];if(!f)return;shrink(f).then(function(b){if(URLS[key]){URL.revokeObjectURL(URLS[key]);delete URLS[key]}return dbPut('pics',b,key)}).then(cb)};i.click()}
+function pickFile(key,cb){var i=document.createElement('input');i.type='file';
+i.onchange=function(){var f=i.files&&i.files[0];if(!f)return;if(URLS[key]){URL.revokeObjectURL(URLS[key]);delete URLS[key]}dbPut('pics',f,key).then(function(){S.f&&(S.f.catalogName=f.name);cb()})};i.click()}
+
+/* ---------- guardar foto en el teléfono ---------- */
+function savePhoto(key,name){dbGet('pics',key).then(function(b){if(!b)return;var file=new File([b],name,{type:b.type||'image/jpeg'});
+if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file]}).catch(function(){});
+else{var u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(u)},4000)}})}
+
+/* ---------- CSV + ZIP ---------- */
+var HEAD=['No','Fecha','Empresa 公司名称','Stand 展位号','Licencia exportacion 自营出口权','Factura+Packing sello 发票箱单盖原章','Video WeChat 视频验厂','WeChat ID 微信号','Producto 产品','Categoria 类别','Certificaciones 国际认证','110V 60Hz','Muestras 样品','Costo muestra USD','Muestra tomada','Caja largo cm','Caja ancho cm','Caja alto cm','Peso bruto caja kg','MOQ FCA','Precio FCA USD','Lugar FCA','Bultos FCA','Total FCA USD','CBM FCA','Peso FCA kg','Contenedor','Cantidad FOB','Precio FOB USD','Puerto FOB','Bultos FOB','Total FOB USD','CBM FOB','Peso FOB kg','Garantia 质保','Calificacion','Estado','Notas','Fotos'];
+function rowOf(r){var cbm=num(r.l)*num(r.w)*num(r.h)/1e6;
+return [r.n,new Date(r.ts).toLocaleString(),r.co,r.booth,r.exp?'Si':'No',r.seal?'Si':'No',r.video?'Si':'No',r.wechat,r.prod,r.cat,(r.certs||[]).join(' / '),r.volt?'Si':'No',r.sample,r.sampleCost,r.sampleTaken?'Si':'No',r.l,r.w,r.h,r.gw,r.moq,r.fca,r.fcaPlace,r.cartonsF,num(r.moq)*num(r.fca),(cbm*num(r.cartonsF)).toFixed(3),num(r.gw)*num(r.cartonsF),r.cont,r.qty,r.fob,r.port,r.cartonsB,num(r.qty)*num(r.fob),(cbm*num(r.cartonsB)).toFixed(3),num(r.gw)*num(r.cartonsB),r.warranty,r.rating,r.status,(r.notes||'').replace(/\n/g,' '),PICS.filter(function(p){return r.pics&&r.pics[p[0]]}).map(function(p){return r.n+'_'+p[0]+'.jpg'}).join(' ')]}
+function csvText(){var rows=[HEAD].concat(R.slice().sort(function(a,b){return a.n-b.n}).map(rowOf));
+return '﻿'+rows.map(function(r){return r.map(function(c){c=c==null?'':String(c);return /[";,\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(',')}).join('\r\n')}
+function dl(blob,name){var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},6000)}
+var CRC=(function(){var t=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u8){var c=0xFFFFFFFF;for(var i=0;i<u8.length;i++)c=CRC[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zip(files){var parts=[],cd=[],off=0,enc=new TextEncoder();
+function n2(v){return [v&255,(v>>8)&255]}function n4(v){return [v&255,(v>>8)&255,(v>>16)&255,(v>>24)&255]}
+files.forEach(function(f){var nm=enc.encode(f.name),c=crc32(f.data),sz=f.data.length;
+var lh=new Uint8Array([80,75,3,4,20,0,0,0,0,0,0,0,0,0].concat(n4(c),n4(sz),n4(sz),n2(nm.length),n2(0)));
+parts.push(lh,nm,f.data);
+cd.push(new Uint8Array([80,75,1,2,20,0,20,0,0,0,0,0,0,0,0,0].concat(n4(c),n4(sz),n4(sz),n2(nm.length),n2(0),n2(0),n2(0),n2(0),n4(0),n4(off))),nm);
+off+=lh.length+nm.length+sz});
+var cdSize=cd.reduce(function(a,b){return a+b.length},0);
+var end=new Uint8Array([80,75,5,6,0,0,0,0].concat(n2(files.length),n2(files.length),n4(cdSize),n4(off),n2(0)));
+return new Blob(parts.concat(cd,[end]),{type:'application/zip'})}
+function exportZip(btn){btn.textContent='Preparando…';var files=[{name:'proveedores.csv',data:new TextEncoder().encode(csvText())}],jobs=[];
+R.forEach(function(r){PICS.forEach(function(p){if(r.pics&&r.pics[p[0]])jobs.push(dbGet('pics',r.id+'_'+p[0]).then(function(b){if(!b)return;return b.arrayBuffer().then(function(ab){files.push({name:'fotos/'+String(r.n).padStart(3,'0')+'_'+p[0]+(p[0]==='catalog'?'.'+(r.catalogName||'file.pdf').split('.').pop():'.jpg'),data:new Uint8Array(ab)})})}))})});
+Promise.all(jobs).then(function(){dl(zip(files),'canton-fair-'+new Date().toISOString().slice(0,10)+'.zip');btn.textContent='Descargar todo (ZIP con fotos)'})}
+
+/* ---------- vistas ---------- */
+function head(title,left,right){return '<header>'+(left||'<span style="width:34px"></span>')+'<span class="ttl">'+esc(title)+'</span>'+(right||'<span style="width:34px"></span>')+'</header>'}
+function navBar(){var t=[['list','list','Proveedores'],['cat','cat','Categoría'],['status','flag','Estado'],['export','dl','Exportar']];
+return '<nav>'+t.map(function(x){return '<button class="'+(S.v===x[0]?'on':'')+'" onclick="go(\''+x[0]+'\')">'+svg(x[1])+x[2]+'</button>'}).join('')+'</nav>'}
+function cardHtml(r){var c=SCOL[r.status]||['var(--bg)','var(--tx2)'];
+return '<div class="card" onclick="openRec(\''+r.id+'\')"><div class="th" id="th_'+r.id+'">'+(r.pics&&r.pics.booth?'':'sin foto')+'</div><div style="flex:1;min-width:0"><h3>'+esc(r.co||r.prod||'Sin nombre')+'</h3><p>#'+r.n+' · '+esc(r.booth||'sin stand')+' · '+stars(r.rating)+'</p><p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(r.prod||'')+' · FOB '+money(num(r.fob))+'</p><span class="pill" style="background:'+c[0]+';color:'+c[1]+'">'+esc(r.status||'')+'</span></div></div>'}
+function fillThumbs(){R.forEach(function(r){if(r.pics&&r.pics.booth){var el=document.getElementById('th_'+r.id);if(el)picUrl(r.id+'_booth').then(function(u){if(u&&el)el.style.cssText='width:62px;height:62px;border-radius:var(--r);flex-shrink:0;background:#eee url('+u+') center/cover'})}})}
+function vList(){var q=S.q.toLowerCase(),list=R.filter(function(r){return !q||((r.co||'')+' '+(r.prod||'')+' '+(r.booth||'')+' '+(r.cat||'')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return b.n-a.n});
+return head('Proveedores 供应商')+'<main><p class="banner" style="background:var(--okbg);color:var(--ok)">'+R.length+' proveedores guardados en este teléfono · siguiente #'+(R.length+1)+'</p><div class="search"><input type="text" placeholder="Buscar empresa, producto, stand…" value="'+esc(S.q)+'" oninput="filterList(this.value)"></div><div id="rows">'+(list.length?list.map(cardHtml).join(''):'<p class="note" style="padding:30px 20px;text-align:center">Aún no hay proveedores. Toca el botón + para registrar el primero.</p>')+'</div></main><button class="fab" onclick="newForm()">+</button>'+navBar()}
+function filterList(v){S.q=v;var q=v.toLowerCase();var list=R.filter(function(r){return !q||((r.co||'')+' '+(r.prod||'')+' '+(r.booth||'')+' '+(r.cat||'')).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return b.n-a.n});
+var el=document.getElementById('rows');if(!el)return;el.innerHTML=list.length?list.map(cardHtml).join(''):'<p class="note" style="padding:30px 20px;text-align:center">Ningún proveedor coincide con la búsqueda.</p>';fillThumbs()}
+function grouped(key,order){var g={};R.forEach(function(r){var k=r[key]||'—';(g[k]=g[k]||[]).push(r)});
+var ks=order.filter(function(k){return g[k]}).concat(Object.keys(g).filter(function(k){return order.indexOf(k)<0}));
+if(!ks.length)return '<p class="note" style="padding:30px 20px;text-align:center">Aún no hay proveedores.</p>';
+return ks.map(function(k,i){var id=key+i,o=S.open[id]!==false;
+return '<div class="grp" onclick="S.open[\''+id+'\']='+(!o)+';render()"><span>'+esc(k)+'</span><span style="color:var(--tx2);font-weight:400">'+g[k].length+' '+(o?'▲':'▼')+'</span></div>'+(o?g[k].sort(function(a,b){return (b.rating||0)-(a.rating||0)}).map(cardHtml).join(''):'')}).join('')}
+function vCat(){return head('Por categoría 按类别')+'<main>'+grouped('cat',catsAll())+'</main><button class="fab" onclick="newForm()">+</button>'+navBar()}
+function vStatus(){return head('Por estado 跟进状态')+'<main>'+grouped('status',STATUS)+'</main><button class="fab" onclick="newForm()">+</button>'+navBar()}
+function vExport(){var pics=0;R.forEach(function(r){PICS.forEach(function(p){if(r.pics&&r.pics[p[0]])pics++})});
+return head('Exportar y respaldar')+'<main><div class="stat"><div><p>Proveedores</p><strong>'+R.length+'</strong></div><div><p>Fotos y archivos</p><strong>'+pics+'</strong></div></div>'+
+'<div class="fl"><button class="btn p" onclick="exportZip(this)">Descargar todo (ZIP con fotos)</button><p class="note" style="padding:8px 0 0">Un solo archivo con proveedores.csv y todas las fotos. Ábrelo en la computadora y sube el CSV a tu Google Sheet o a Odoo.</p></div>'+
+'<div class="fl"><button class="btn g" style="width:100%" onclick="dl(new Blob([csvText()],{type:\'text/csv\'}),\'proveedores.csv\')">Descargar solo el CSV</button></div>'+
+'<p class="gh">Datos</p><div class="fl"><p class="note" style="padding:0 0 10px">Todo se guarda dentro de este teléfono, sin internet. Exporta al menos una vez al día para tener respaldo fuera del teléfono.</p><button class="btn g" style="width:100%;color:var(--da)" onclick="wipe()">Borrar todos los datos</button></div>'+
+'<p class="gh">Instalar</p><p class="note">iPhone: Safari → Compartir → "Agregar a inicio". Android: Chrome → menú ⋮ → "Instalar aplicación". Ya instalada funciona sin internet y sin VPN en China.</p></main>'+navBar()}
+function detailRows(r){var cbm=num(r.l)*num(r.w)*num(r.h)/1e6,fill=cbm*num(r.cartonsB)/(CAP[r.cont]||68)*100,wB=num(r.gw)*num(r.cartonsB);
+function d(a,b){return '<div class="dt"><span>'+a+'</span><span>'+b+'</span></div>'}
+return '<p class="gh">Proveedor 供应商</p>'+d('Empresa 公司名称',esc(r.co||'—'))+d('Stand 展位号',esc(r.booth||'—'))+d('Licencia exportación 自营出口权',r.exp?'Sí 是':'No 否')+d('Factura y packing con sello 盖原章',r.seal?'Sí 是':'No 否')+d('Video WeChat 视频验厂',(r.video?'Sí 是':'No 否')+(r.wechat?' · '+esc(r.wechat):''))+
+'<p class="gh">Producto 产品</p>'+d('Producto',esc(r.prod||'—'))+d('Categoría',esc(r.cat||'—'))+d('Certificaciones',esc((r.certs||[]).join(', ')||'—'))+d('110V 60Hz',r.volt?'Sí 是':'No 否')+d('Muestras 样品',esc(r.sample||'—')+(r.sampleCost?' · $'+r.sampleCost:'')+(r.sampleTaken?' · tomada':''))+d('Caja 外箱',(r.l||'?')+'×'+(r.w||'?')+'×'+(r.h||'?')+' cm · '+(r.gw||'?')+' kg · '+cbm.toFixed(3)+' m³')+
+'<p class="gh" style="color:var(--ac)">FCA · MOQ</p>'+d('MOQ · precio',(r.moq||'—')+' pzs · '+money(num(r.fca)))+d('Lugar · bultos',esc(r.fcaPlace||'—')+' · '+(r.cartonsF||'—'))+d('Total',money(num(r.moq)*num(r.fca))+' · '+(cbm*num(r.cartonsF)).toFixed(2)+' m³ · '+Math.round(num(r.gw)*num(r.cartonsF))+' kg')+
+'<p class="gh" style="color:var(--ok)">FOB · Contenedor</p>'+d('Contenedor · cantidad',esc(r.cont||'—')+' · '+(r.qty?Number(r.qty).toLocaleString():'—')+' pzs')+d('Precio · puerto',money(num(r.fob))+' · '+esc(r.port||'—'))+d('Total',money(num(r.qty)*num(r.fob))+' · '+(cbm*num(r.cartonsB)).toFixed(1)+' m³ · '+Math.round(wB).toLocaleString()+' kg')+(r.cartonsB?d('Llenado del contenedor',Math.round(fill)+'%'+(wB>(WCAP[r.cont]||26500)?' · pasa el peso máximo':'')):'')+
+'<p class="gh">Mi evaluación</p>'+d('Calificación',stars(r.rating))+d('Estado',esc(r.status||'—'))+d('Garantía 质保',esc(r.warranty||'—'))+(r.notes?'<div class="fl"><p class="lb">Notas</p>'+esc(r.notes).replace(/\n/g,'<br>')+'</div>':'')+
+'<div class="fl"><button class="btn g" style="width:100%" onclick="editRec(\''+r.id+'\')">Editar</button></div><div class="fl"><button class="btn g" style="width:100%;color:var(--da)" onclick="delRec(\''+r.id+'\')">Borrar proveedor</button></div>'}
+function vDetail(){var r=recSel();if(!r)return vList();
+return head('#'+r.n+' '+(r.co||r.prod||''),'<button class="ib" onclick="go(S.back||\'list\')">'+svg('back')+'</button>','<button class="ib" onclick="editRec(\''+r.id+'\')">'+svg('pen')+'</button>')+
+'<main><div id="hero" class="hero"></div><div class="tiles" id="tiles"></div><p class="note">Toca una foto para verla completa, guardarla en tu galería o compartirla.</p>'+detailRows(r)+'</main>'+navBar()}
+function fillDetailPics(){var r=recSel();if(!r)return;
+if(r.pics&&r.pics.booth)picUrl(r.id+'_booth').then(function(u){var h=document.getElementById('hero');if(u&&h)h.innerHTML='<img src="'+u+'" onclick="showPhoto(\'booth\')">'});
+var t=document.getElementById('tiles');if(!t)return;t.innerHTML='';
+PICS.slice(1).forEach(function(p){if(!(r.pics&&r.pics[p[0]]))return;var d=document.createElement('div');d.innerHTML='<span>'+p[1]+'</span>';d.onclick=function(){showPhoto(p[0])};t.appendChild(d);
+if(p[0]==='catalog'){d.insertAdjacentHTML('afterbegin','<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--tx2);padding:4px;text-align:center">'+esc(r.catalogName||'archivo')+'</div>');return}
+picUrl(r.id+'_'+p[0]).then(function(u){if(u)d.insertAdjacentHTML('afterbegin','<img src="'+u+'">')})})}
+function showPhoto(k){var r=recSel();if(k==='catalog'){savePhoto(r.id+'_catalog',r.catalogName||'catalogo');return}S.ph=k;S.v='photo';render()}
+function vPhoto(){var r=recSel(),name='#'+r.n+'_'+(r.co||r.prod||'proveedor').replace(/[^\w]+/g,'_')+'_'+S.ph+'.jpg';
+return '<div class="full"><div class="bar"><button onclick="S.v=\'detail\';render()">Cerrar</button><button onclick="savePhoto(\''+r.id+'_'+S.ph+'\',\''+name+'\')">Guardar en el teléfono</button></div><img id="bigpic"></div>'}
+function fillBig(){picUrl(recSel().id+'_'+S.ph).then(function(u){var i=document.getElementById('bigpic');if(i&&u)i.src=u})}
+
+/* ---------- formulario ---------- */
+function f(){return S.f}
+function setF(k,v){S.f[k]=v;delete S.err[k];render()}
+function fld(k,ph,type){return '<input type="'+(type||'text')+'" '+(type==='number'?'inputmode="decimal" step="any"':'')+' value="'+esc(f()[k]==null?'':f()[k])+'" placeholder="'+ph+'" oninput="S.f.'+k+'=this.value;'+(type==='number'?'calc()':'')+'">'}
+function chip(k,v,lab){var on=f()[k]===v;return '<button class="b'+(on?' on':'')+'" onclick="setF(\''+k+'\','+(typeof v==='number'?v:"'"+v+"'")+')">'+lab+'</button>'}
+function er(k){return S.err[k]?'<p class="err">'+S.err[k]+'</p>':''}
+function camBox(k,label){var has=f().pics&&f().pics[k];
+return '<div id="cam_'+k+'">'+(has?'<div class="shot" id="shot_'+k+'"><button class="x" onclick="event.stopPropagation();rmPic(\''+k+'\')">✕</button></div>':'<button class="cam" onclick="addPic(\''+k+'\')">'+svg('cam','width:20px;height:20px')+' '+label+'</button>')+'</div>'}
+function addPic(k){var id=f().id;pickPhoto(id+'_'+k,function(){f().pics[k]=1;delete S.err[k];render()})}
+function rmPic(k){var id=f().id;if(URLS[id+'_'+k]){URL.revokeObjectURL(URLS[id+'_'+k]);delete URLS[id+'_'+k]}dbDel('pics',id+'_'+k).then(function(){delete f().pics[k];render()})}
+function fillFormPics(){var id=f().id;Object.keys(f().pics||{}).forEach(function(k){if(k==='catalog')return;var box=document.getElementById('shot_'+k);if(box)picUrl(id+'_'+k).then(function(u){if(u&&box&&!box.querySelector('img'))box.insertAdjacentHTML('afterbegin','<img src="'+u+'">')})})}
+function toggleCert(c){var a=f().certs||[];if(c.indexOf('Ninguna')===0)f().certs=a.indexOf(c)>=0?[]:[c];else{a=a.filter(function(x){return x.indexOf('Ninguna')!==0});f().certs=a.indexOf(c)>=0?a.filter(function(x){return x!==c}):a.concat([c])}render()}
+function vForm(){var r=f();
+return head(r.isNew?'Nuevo proveedor #'+r.n:'Editar #'+r.n,'<button class="ib" onclick="cancelForm()">'+svg('x')+'</button>','<span class="pill" style="background:var(--wabg);color:var(--wa)">'+(navigator.onLine?'En línea':'Sin conexión')+'</span>')+'<main>'+
+'<p class="gh">Proveedor 供应商</p>'+
+'<div class="fl"><p class="lb"><b>Foto del stand</b> 展位照片 <span class="req">*</span></p>'+camBox('booth','Tomar foto / elegir de la galería')+er('booth')+'</div>'+
+'<div class="fl"><div class="g2"><div><p class="lb"><b>Stand</b> 展位号</p>'+fld('booth','11.2 C15')+'</div><div><p class="lb"><b>Empresa</b> 公司名称</p>'+fld('co','Zhongshan Bright')+'</div></div></div>'+
+'<div class="fl"><p class="lb"><b>¿Tienen licencia de exportación directa?</b> 是否有自营出口权？ <span class="req">*</span></p><div class="row">'+chip('exp',1,'Sí 是')+chip('exp',0,'No 否')+'</div>'+er('exp')+'</div>'+
+'<div class="fl"><p class="lb"><b>¿Pueden emitir Factura Comercial y Lista de Empaque con sello húmedo original?</b> 能否提供加盖公司公章原件的商业发票和装箱单？ <span class="req">*</span></p><div class="row">'+chip('seal',1,'Sí 是')+chip('seal',0,'No 否')+'</div>'+er('seal')+'</div>'+
+'<div class="fl"><p class="lb"><b>¿Inspección por video en vivo por WeChat?</b> (línea de producción, maquinaria, almacén, letrero de la entrada) 能否微信视频实时展示生产线、设备、原材料仓库及公司招牌？</p><div class="row">'+chip('video',1,'Sí 是')+chip('video',0,'No 否')+'</div>'+(r.video===1?'<p class="lb" style="margin-top:10px"><b>WeChat ID</b> 微信号</p>'+fld('wechat','kevin_liu88'):'')+'</div>'+
+'<p class="gh">Producto 产品</p>'+
+'<div class="fl"><p class="lb"><b>Producto</b> 产品 <span class="req">*</span></p>'+fld('prod','LED panel 60x60 40W')+er('prod')+'</div>'+
+'<div class="fl"><p class="lb"><b>Categoría</b> 类别 <span class="req">*</span></p><select onchange="setF(\'cat\',this.value)"><option value="">Seleccionar 选择…</option>'+catsAll().map(function(c){return '<option'+(r.cat===c?' selected':'')+'>'+esc(c)+'</option>'}).join('')+'<option value="__o"'+(r.cat==='__o'?' selected':'')+'>Otra 其他…</option></select>'+(r.cat==='__o'?'<div style="margin-top:8px">'+fld('catOther','Solar 太阳能')+'</div>':'')+er('cat')+'</div>'+
+'<div class="fl"><p class="lb"><b>Foto del producto</b> 产品照片</p>'+camBox('product','Tomar foto / elegir de la galería')+'</div>'+
+'<div class="fl"><p class="lb"><b>Certificaciones</b> 国际认证</p><div class="row">'+CERTS.map(function(c){return '<button class="b'+((r.certs||[]).indexOf(c)>=0?' on':'')+'" onclick="toggleCert(\''+c+'\')">'+c+'</button>'}).join('')+'</div></div>'+
+'<div class="fl"><p class="lb"><b>¿Versión 110–120V / 60Hz, enchufe A/B (Venezuela)?</b> 是否有110–120V/60Hz版本？</p><div class="row">'+chip('volt',1,'Sí 是')+chip('volt',0,'No 否')+'</div></div>'+
+'<div class="fl"><p class="lb"><b>Muestras</b> 样品</p><div class="row">'+chip('sample','Gratis 免费','Gratis 免费')+chip('sample','Con costo 收费','Con costo 收费')+chip('sample','No hay 不提供','No hay 不提供')+'</div>'+(r.sample==='Con costo 收费'?'<p class="lb" style="margin-top:10px"><b>Costo de la muestra</b> 样品费 USD</p>'+fld('sampleCost','35','number'):'')+(r.sample&&r.sample!=='No hay 不提供'?'<p class="lb" style="margin-top:10px"><b>¿Me llevé la muestra?</b> 已取样品？</p><div class="row">'+chip('sampleTaken',1,'Sí 是')+chip('sampleTaken',0,'No 否')+'</div>':'')+'</div>'+
+'<div class="fl"><p class="lb"><b>Caja</b> 外箱 cm — largo · ancho · alto · <b>peso bruto</b> 毛重 kg</p><div class="g4">'+fld('l','62','number')+fld('w','62','number')+fld('h','45','number')+fld('gw','14.5','number')+'</div></div>'+
+'<p class="gh" style="color:var(--ac)">FCA · MOQ 货交承运人</p>'+
+'<div class="fl"><div class="g2"><div><p class="lb">MOQ 起订量</p>'+fld('moq','500','number')+'</div><div><p class="lb">Precio unitario USD 单价</p>'+fld('fca','4.20','number')+'</div><div><p class="lb">Lugar 交货地点</p><select onchange="S.f.fcaPlace=this.value"><option'+(r.fcaPlace==='Fábrica 工厂'?' selected':'')+'>Fábrica 工厂</option><option'+(r.fcaPlace==='Almacén 仓库'?' selected':'')+'>Almacén 仓库</option></select></div><div><p class="lb">Bultos 箱数</p>'+fld('cartonsF','25','number')+'</div></div><div class="sum" style="background:var(--acbg);color:var(--ac)" id="sumF">—</div></div>'+
+'<p class="gh" style="color:var(--ok)">FOB · Contenedor 离岸价</p>'+
+'<div class="fl"><div class="g2"><div><p class="lb">Contenedor 柜型</p><select onchange="S.f.cont=this.value;calc()">'+['40HQ','40GP','20GP'].map(function(c){return '<option'+(r.cont===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div><div><p class="lb">Cantidad 整柜数量</p>'+fld('qty','7600','number')+'</div><div><p class="lb">Precio unitario USD 单价</p>'+fld('fob','4.05','number')+'</div><div><p class="lb">Puerto 离岸港口</p><select onchange="S.f.port=this.value">'+PORTS.map(function(p){return '<option'+(r.port===p?' selected':'')+'>'+esc(p)+'</option>'}).join('')+'</select></div></div><p class="lb" style="margin-top:10px">Bultos del contenedor 整柜箱数</p>'+fld('cartonsB','380','number')+'<div class="sum" style="background:var(--okbg);color:var(--ok)" id="sumB">—</div></div>'+
+'<div class="fl"><p class="lb"><b>Garantía</b> 质保</p>'+fld('warranty','2 años 2年')+'</div>'+
+'<p class="gh">Documentos 文件</p>'+
+'<div class="fl"><p class="lb"><b>Catálogo</b> 产品目录（上传文件）</p>'+(r.pics&&r.pics.catalog?'<div class="row"><span style="flex:1;font-size:14px;color:var(--ok);align-self:center">'+esc(r.catalogName||'archivo adjunto')+'</span><button class="b" onclick="rmPic(\'catalog\')">Quitar</button></div>':'<button class="cam" onclick="addCatalog()">Adjuntar archivo 上传文件</button>')+'</div>'+
+'<div class="fl"><p class="lb"><b>Licencia de negocio</b> 请提供营业执照复印件</p>'+camBox('license','Foto de la licencia')+'</div>'+
+'<div class="fl"><p class="lb"><b>Tarjeta del proveedor</b> 名片照片</p>'+camBox('card','Foto de la tarjeta')+'</div>'+
+'<p class="gh">Mi evaluación</p>'+
+'<div class="fl"><p class="lb"><b>Calificación</b></p><div>'+[1,2,3,4,5].map(function(i){return '<button class="star'+((r.rating||0)>=i?' on':'')+'" onclick="setF(\'rating\','+i+')">★</button>'}).join('')+'</div></div>'+
+'<div class="fl"><p class="lb"><b>Notas</b> 备注</p><textarea oninput="S.f.notes=this.value" placeholder="Buen acabado, el dueño responde rápido…">'+esc(r.notes||'')+'</textarea></div>'+
+'<div class="fl"><p class="lb"><b>Seguimiento</b> 跟进状态</p><div class="g2">'+STATUS.map(function(s){return chip('status',s,s)}).join('')+'</div></div>'+
+'<div class="fl" style="border:0">'+(Object.keys(S.err).length?'<p class="err" style="margin:0 0 10px">Falta completar lo marcado en rojo</p>':'')+'<button class="btn p" onclick="save()">Guardar proveedor</button></div>'+
+'</main>'}
+function addCatalog(){pickFile(f().id+'_catalog',function(){f().pics.catalog=1;render()})}
+function calc(){var r=f();if(!r)return;var c=num(r.l)*num(r.w)*num(r.h)/1e6,a=document.getElementById('sumF'),b=document.getElementById('sumB');if(!a)return;
+a.textContent='Total '+money(num(r.moq)*num(r.fca))+' · '+(c*num(r.cartonsF)).toFixed(2)+' m³ · '+Math.round(num(r.gw)*num(r.cartonsF))+' kg';
+var v=c*num(r.cartonsB),w=num(r.gw)*num(r.cartonsB),cap=CAP[r.cont||'40HQ'],wc=WCAP[r.cont||'40HQ'];
+b.textContent='Total '+money(num(r.qty)*num(r.fob))+' · '+v.toFixed(1)+' m³ · '+Math.round(w).toLocaleString()+' kg'+(r.cartonsB?' · llenado '+Math.round(v/cap*100)+'%':'')+(w>wc?' · pasa el peso máximo':'')}
+
+/* ---------- acciones ---------- */
+function recSel(){for(var i=0;i<R.length;i++)if(R[i].id===S.sel)return R[i]}
+function openRec(id){S.sel=id;S.v='detail';render()}
+function newForm(){S.f={id:uid(),n:(R.reduce(function(m,r){return Math.max(m,r.n)},0)+1),isNew:1,pics:{},certs:[],cat:'',sample:'',rating:0,status:STATUS[0],fcaPlace:'Fábrica 工厂',cont:'40HQ',port:PORTS[0]};S.err={};S.back=S.v;S.v='form';render();window.scrollTo(0,0)}
+function editRec(id){var r=R.filter(function(x){return x.id===id})[0];S.f=JSON.parse(JSON.stringify(r));S.f.isNew=0;S.err={};S.back='detail';S.v='form';render();window.scrollTo(0,0)}
+function cancelForm(){var r=f();if(r.isNew)Object.keys(r.pics||{}).forEach(function(k){dbDel('pics',r.id+'_'+k)});S.f=null;S.v=S.back==='detail'?'detail':(S.back||'list');render()}
+function save(){var r=f();S.err={};
+if(!(r.pics&&r.pics.booth))S.err.booth='Toma primero la foto del stand';
+if(r.exp===undefined)S.err.exp='Elige Sí o No';
+if(r.seal===undefined)S.err.seal='Elige Sí o No';
+if(!(r.prod||'').trim())S.err.prod='Escribe el producto';
+var cat=r.cat==='__o'?(r.catOther||'').trim():r.cat;if(!cat)S.err.cat='Elige o escribe una categoría';
+if(Object.keys(S.err).length){render();window.scrollTo(0,0);return}
+r.cat=cat;delete r.catOther;r.ts=r.ts||Date.now();r.upd=Date.now();var isNew=r.isNew;delete r.isNew;
+dbPut('recs',JSON.parse(JSON.stringify(r))).then(function(){
+var i=R.map(function(x){return x.id}).indexOf(r.id);if(i>=0)R[i]=r;else R.push(r);
+if(CATS.indexOf(cat)<0&&catsAll().indexOf(cat)<0)CATS.push(cat);
+S.f=null;S.sel=r.id;S.v=isNew?'list':'detail';render()})}
+function delRec(id){if(!confirm('¿Borrar este proveedor y sus fotos? No se puede deshacer.'))return;
+PICS.forEach(function(p){dbDel('pics',id+'_'+p[0]);if(URLS[id+'_'+p[0]]){URL.revokeObjectURL(URLS[id+'_'+p[0]]);delete URLS[id+'_'+p[0]]}});
+dbDel('recs',id).then(function(){R=R.filter(function(r){return r.id!==id});S.v='list';render()})}
+function wipe(){if(!confirm('Esto borra TODOS los proveedores y fotos de este teléfono. ¿Seguro? Exporta el ZIP primero.'))return;
+if(!confirm('Última confirmación: se borra todo.'))return;
+Promise.all([new Promise(function(r){var q=tx('recs','readwrite').clear();q.onsuccess=r}),new Promise(function(r){var q=tx('pics','readwrite').clear();q.onsuccess=r})]).then(function(){R=[];URLS={};S.v='list';render()})}
+function go(v){if(S.f&&v!=='form'){if(!confirm('Hay un proveedor a medio llenar. ¿Salir sin guardar?'))return;cancelForm()}
+S.back=v;S.v=v;S.sel=v==='detail'?S.sel:S.sel;render();window.scrollTo(0,0)}
+
+/* ---------- render ---------- */
+function render(){var m={list:vList,cat:vCat,status:vStatus,export:vExport,detail:vDetail,photo:vPhoto,form:vForm};
+document.getElementById('app').innerHTML=m[S.v]();
+if(S.v==='list'||S.v==='cat'||S.v==='status')fillThumbs();
+if(S.v==='detail')fillDetailPics();
+if(S.v==='photo')fillBig();
+if(S.v==='form'){fillFormPics();calc()}}
+window.addEventListener('beforeunload',function(e){if(S.f){e.preventDefault();e.returnValue=''}});
+openDB().then(function(){return dbAll('recs')}).then(function(rows){R=rows||[];render()}).catch(function(e){document.getElementById('app').innerHTML='<main><p class="note" style="padding:40px 20px">No se pudo abrir la base de datos local: '+esc(e&&e.message)+'</p></main>'});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+</script>
+</body>
+</html>
