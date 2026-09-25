@@ -284,7 +284,7 @@ if(S.v==='photo')fillBig();
 if(S.v==='form'){fillFormPics();calc()}}
 window.addEventListener('beforeunload',function(e){if(S.f){e.preventDefault();e.returnValue=''}});
 openDB().then(function(){return dbAll('recs')}).then(function(rows){R=rows||[];render()}).catch(function(e){document.getElementById('app').innerHTML='<main><p class="note" style="padding:40px 20px">Could not open the local database: '+esc(e&&e.message)+'</p></main>'});
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(reg){reg.update();setInterval(function(){reg.update()},3600000);reg.addEventListener('updatefound',function(){var w=reg.installing;if(!w)return;w.addEventListener('statechange',function(){if(w.state==='activated'&&!S.f)location.reload()})})}).catch(function(){})}
 </script>
 </body>
 </html>
