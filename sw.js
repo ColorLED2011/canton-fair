@@ -1,5 +1,5 @@
-var CACHE = 'canton-v3';
-var FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
+var CACHE = 'canton-v4';
+var FILES = ['./', './index.html', './manifest.webmanifest', './jsqr.min.js', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(

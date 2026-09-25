@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Canton Fair · COLOR LED</title>
+<script src="jsqr.min.js" defer></script>
 <style>
 :root{--bg:#f5f4f0;--card:#fff;--tx:#1d1d1b;--tx2:#5f5e5a;--tx3:#8a8880;--bd:#e2e0d9;--ac:#0f766e;--acbg:#e1f5ee;--wa:#854f0b;--wabg:#faeeda;--da:#a32d2d;--dabg:#fcebeb;--ok:#3b6d11;--okbg:#eaf3de;--r:10px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -130,10 +131,42 @@ function savePhoto(key,name){dbGet('pics',key).then(function(b){if(!b)return;var
 if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file]}).catch(function(){});
 else{var u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(u)},4000)}})}
 
+/* ---------- escaner QR / QR scanner ---------- */
+var QR={stream:null,raf:null};
+function qrOpen(){if(document.getElementById('qrbox'))return;
+var d=document.createElement('div');d.className='full';d.id='qrbox';
+d.innerHTML='<div class="bar"><button onclick="qrClose()">Close 关闭</button><button onclick="qrFromPhoto()">From photo 从照片</button></div><video id="qrv" playsinline muted autoplay style="width:100%;max-height:72vh;object-fit:cover;background:#000"></video><p id="qrmsg" style="color:#ccc;font-size:13px;text-align:center;margin:14px 20px;line-height:1.5">Point the camera at the supplier QR code 请对准供应商二维码</p>';
+document.body.appendChild(d);
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){document.getElementById('qrmsg').textContent='Camera not available here. Use "From photo" 请用“从照片”';return}
+navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}).then(function(st){QR.stream=st;var v=document.getElementById('qrv');if(!v){st.getTracks().forEach(function(t){t.stop()});return}v.srcObject=st;v.setAttribute('playsinline','');var pl=v.play();if(pl&&pl.catch)pl.catch(function(){});qrLoop()}).catch(function(){var m=document.getElementById('qrmsg');if(m)m.textContent='No camera permission. Use "From photo" 没有相机权限，请用“从照片”'})}
+function decodeCanvas(c){if(!window.jsQR)return null;var x=c.getContext('2d'),d=x.getImageData(0,0,c.width,c.height);var code=jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});return code&&code.data?code.data:null}
+function qrLoop(){var c=document.createElement('canvas');
+function tick(){var box=document.getElementById('qrbox'),v=document.getElementById('qrv');if(!box||!v)return;
+if(v.videoWidth){var s=Math.min(1,700/Math.max(v.videoWidth,v.videoHeight));c.width=Math.round(v.videoWidth*s);c.height=Math.round(v.videoHeight*s);c.getContext('2d').drawImage(v,0,0,c.width,c.height);var t=decodeCanvas(c);if(t){qrFound(t);return}}
+QR.raf=requestAnimationFrame(tick)}
+tick()}
+function qrFromPhoto(){var i=document.createElement('input');i.type='file';i.accept='image/*';
+i.onchange=function(){var f=i.files&&i.files[0];if(!f)return;var img=new Image(),u=URL.createObjectURL(f);
+img.onload=function(){var c=document.createElement('canvas'),s=Math.min(1,1400/Math.max(img.width,img.height));c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);var t=decodeCanvas(c);
+if(t)qrFound(t);else{var m=document.getElementById('qrmsg');if(m)m.textContent='No QR code found in that photo 未识别到二维码'}};
+img.onerror=function(){URL.revokeObjectURL(u)};img.src=u};i.click()}
+function qrFound(t){if(navigator.vibrate)navigator.vibrate(60);if(S.f){S.f.catalogUrl=t;qrClose();render()}else qrClose()}
+function qrClose(){if(QR.raf)cancelAnimationFrame(QR.raf);QR.raf=null;if(QR.stream){QR.stream.getTracks().forEach(function(t){t.stop()});QR.stream=null}var d=document.getElementById('qrbox');if(d)d.remove()}
+
+/* ---------- guardar todas las fotos / save all photos ---------- */
+var DET={id:null,files:[]};
+function preloadFiles(r){DET={id:r.id,files:[]};
+PICS.forEach(function(p){if(!(r.pics&&r.pics[p[0]])||p[0]==='catalog')return;
+dbGet('pics',r.id+'_'+p[0]).then(function(b){if(b&&DET.id===r.id)DET.files.push(new File([b],'canton_'+r.n+'_'+p[0]+'.jpg',{type:b.type||'image/jpeg'}))})})}
+function saveAllPhotos(){var r=recSel();if(!r)return;var fs=DET.id===r.id?DET.files.slice():[];
+if(!fs.length){alert('No photos yet 暂无照片');return}
+if(navigator.canShare&&navigator.canShare({files:fs})){navigator.share({files:fs,title:'#'+r.n+' '+(r.co||r.prod||'')}).catch(function(){});return}
+fs.forEach(function(f,i){setTimeout(function(){var u=URL.createObjectURL(f),a=document.createElement('a');a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},5000)},i*500)})}
+
 /* ---------- CSV + ZIP ---------- */
-var HEAD=['No','Date','Company 公司名称','Booth 展位号','Self-run export license 自营出口权','CI+PL wet seal 发票箱单盖原章','WeChat video 视频验厂','WeChat ID 微信号','Product 产品','Category 类别','Certifications 国际认证','110V 60Hz','Samples 样品','Sample cost USD','Sample taken','Carton length cm','Carton width cm','Carton height cm','Gross weight per carton kg','MOQ FCA','FCA price USD','FCA place','Cartons FCA','FCA total USD','FCA CBM','FCA weight kg','Container','FOB quantity','FOB price USD','FOB port','Cartons FOB','FOB total USD','FOB CBM','FOB weight kg','Warranty 质保','Rating','Status','Notes','Photos'];
+var HEAD=['No','Date','Company 公司名称','Booth 展位号','Self-run export license 自营出口权','CI+PL wet seal 发票箱单盖原章','WeChat video 视频验厂','WeChat ID 微信号','Product 产品','Category 类别','Certifications 国际认证','110V 60Hz','Samples 样品','Sample cost USD','Sample taken','Carton length cm','Carton width cm','Carton height cm','Gross weight per carton kg','MOQ FCA','FCA price USD','FCA place','Cartons FCA','FCA total USD','FCA CBM','FCA weight kg','Container','FOB quantity','FOB price USD','FOB port','Cartons FOB','FOB total USD','FOB CBM','FOB weight kg','Warranty 质保','Rating','Status','Notes','Photos','Catalog link 目录链接'];
 function rowOf(r){var cbm=num(r.l)*num(r.w)*num(r.h)/1e6;
-return [r.n,new Date(r.ts).toLocaleString(),r.co,r.booth,r.exp?'Yes':'No',r.seal?'Yes':'No',r.video?'Yes':'No',r.wechat,r.prod,r.cat,(r.certs||[]).join(' / '),r.volt?'Yes':'No',r.sample,r.sampleCost,r.sampleTaken?'Yes':'No',r.l,r.w,r.h,r.gw,r.moq,r.fca,r.fcaPlace,r.cartonsF,num(r.moq)*num(r.fca),(cbm*num(r.cartonsF)).toFixed(3),num(r.gw)*num(r.cartonsF),r.cont,r.qty,r.fob,r.port,r.cartonsB,num(r.qty)*num(r.fob),(cbm*num(r.cartonsB)).toFixed(3),num(r.gw)*num(r.cartonsB),r.warranty,r.rating,r.status,(r.notes||'').replace(/\n/g,' '),PICS.filter(function(p){return r.pics&&r.pics[p[0]]}).map(function(p){return r.n+'_'+p[0]+'.jpg'}).join(' ')]}
+return [r.n,new Date(r.ts).toLocaleString(),r.co,r.booth,r.exp?'Yes':'No',r.seal?'Yes':'No',r.video?'Yes':'No',r.wechat,r.prod,r.cat,(r.certs||[]).join(' / '),r.volt?'Yes':'No',r.sample,r.sampleCost,r.sampleTaken?'Yes':'No',r.l,r.w,r.h,r.gw,r.moq,r.fca,r.fcaPlace,r.cartonsF,num(r.moq)*num(r.fca),(cbm*num(r.cartonsF)).toFixed(3),num(r.gw)*num(r.cartonsF),r.cont,r.qty,r.fob,r.port,r.cartonsB,num(r.qty)*num(r.fob),(cbm*num(r.cartonsB)).toFixed(3),num(r.gw)*num(r.cartonsB),r.warranty,r.rating,r.status,(r.notes||'').replace(/\n/g,' '),PICS.filter(function(p){return r.pics&&r.pics[p[0]]}).map(function(p){return r.n+'_'+p[0]+'.jpg'}).join(' '),r.catalogUrl||'']}
 function csvText(){var rows=[HEAD].concat(R.slice().sort(function(a,b){return a.n-b.n}).map(rowOf));
 return '﻿'+rows.map(function(r){return r.map(function(c){c=c==null?'':String(c);return /[";,\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(',')}).join('\r\n')}
 function dl(blob,name){var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},6000)}
@@ -183,12 +216,12 @@ return '<p class="gh">Supplier 供应商</p>'+d('Company 公司名称',esc(r.co|
 '<p class="gh">Product 产品</p>'+d('Product',esc(r.prod||'—'))+d('Category',esc(r.cat||'—'))+d('Certifications',esc((r.certs||[]).join(', ')||'—'))+d('110V 60Hz',r.volt?'Yes 是':'No 否')+d('Samples 样品',esc(r.sample||'—')+(r.sampleCost?' · $'+r.sampleCost:'')+(r.sampleTaken?' · taken':''))+d('Carton 外箱',(r.l||'?')+'×'+(r.w||'?')+'×'+(r.h||'?')+' cm · '+(r.gw||'?')+' kg · '+cbm.toFixed(3)+' m³')+
 '<p class="gh" style="color:var(--ac)">FCA · MOQ</p>'+d('MOQ · price',(r.moq||'—')+' pcs · '+money(num(r.fca)))+d('Place · cartons',esc(r.fcaPlace||'—')+' · '+(r.cartonsF||'—'))+d('Total',money(num(r.moq)*num(r.fca))+' · '+(cbm*num(r.cartonsF)).toFixed(2)+' m³ · '+Math.round(num(r.gw)*num(r.cartonsF))+' kg')+
 '<p class="gh" style="color:var(--ok)">FOB · Container</p>'+d('Container · quantity',esc(r.cont||'—')+' · '+(r.qty?Number(r.qty).toLocaleString():'—')+' pcs')+d('Price · port',money(num(r.fob))+' · '+esc(r.port||'—'))+d('Total',money(num(r.qty)*num(r.fob))+' · '+(cbm*num(r.cartonsB)).toFixed(1)+' m³ · '+Math.round(wB).toLocaleString()+' kg')+(r.cartonsB?d('Container fill',Math.round(fill)+'%'+(wB>(WCAP[r.cont]||26500)?' · over the weight limit':'')):'')+
-'<p class="gh">My evaluation 我的评价</p>'+d('Rating',stars(r.rating))+d('Status',esc(r.status||'—'))+d('Warranty 质保',esc(r.warranty||'—'))+(r.notes?'<div class="fl"><p class="lb">Notes</p>'+esc(r.notes).replace(/\n/g,'<br>')+'</div>':'')+
-'<div class="fl"><button class="btn g" style="width:100%" onclick="editRec(\''+r.id+'\')">Edit</button></div><div class="fl"><button class="btn g" style="width:100%;color:var(--da)" onclick="delRec(\''+r.id+'\')">Delete supplier</button></div>'}
+(r.catalogUrl?'<div class="dt"><span>Catalog link 目录链接</span><span style="word-break:break-all"><a href="'+esc(r.catalogUrl)+'" target="_blank" rel="noopener">'+esc(r.catalogUrl)+'</a></span></div>':'')+'<p class="gh">My evaluation 我的评价</p>'+d('Rating',stars(r.rating))+d('Status',esc(r.status||'—'))+d('Warranty 质保',esc(r.warranty||'—'))+(r.notes?'<div class="fl"><p class="lb">Notes</p>'+esc(r.notes).replace(/\n/g,'<br>')+'</div>':'')+
+'<div class="fl"><button class="btn p" onclick="saveAllPhotos()">Save all photos to phone 保存所有照片</button></div>'+'<div class="fl"><button class="btn g" style="width:100%" onclick="editRec(\''+r.id+'\')">Edit</button></div><div class="fl"><button class="btn g" style="width:100%;color:var(--da)" onclick="delRec(\''+r.id+'\')">Delete supplier</button></div>'}
 function vDetail(){var r=recSel();if(!r)return vList();
 return head('#'+r.n+' '+(r.co||r.prod||''),'<button class="ib" onclick="go(S.back||\'list\')">'+svg('back')+'</button>','<button class="ib" onclick="editRec(\''+r.id+'\')">'+svg('pen')+'</button>')+
 '<main><div id="hero" class="hero"></div><div class="tiles" id="tiles"></div><p class="note">Tap a photo to open it full screen, save it to your gallery or share it.</p>'+detailRows(r)+'</main>'+navBar()}
-function fillDetailPics(){var r=recSel();if(!r)return;
+function fillDetailPics(){var r=recSel();if(!r)return;preloadFiles(r);
 if(r.pics&&r.pics.booth)picUrl(r.id+'_booth').then(function(u){var h=document.getElementById('hero');if(u&&h)h.innerHTML='<img src="'+u+'" onclick="showPhoto(\'booth\')">'});
 var t=document.getElementById('tiles');if(!t)return;t.innerHTML='';
 PICS.slice(1).forEach(function(p){if(!(r.pics&&r.pics[p[0]]))return;var d=document.createElement('div');d.innerHTML='<span>'+p[1]+'</span>';d.onclick=function(){showPhoto(p[0])};t.appendChild(d);
@@ -233,7 +266,7 @@ return head(r.isNew?'New supplier #'+r.n:'Edit #'+r.n,'<button class="ib" onclic
 '<div class="fl"><div class="g2"><div><p class="lb">Container 柜型</p><select onchange="S.f.cont=this.value;calc()">'+['40HQ','40GP','20GP'].map(function(c){return '<option'+(r.cont===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div><div><p class="lb">Quantity 整柜数量</p>'+fld('qty','7600','number')+'</div><div><p class="lb">Unit price USD 单价</p>'+fld('fob','4.05','number')+'</div><div><p class="lb">Port 离岸港口</p><select onchange="S.f.port=this.value">'+PORTS.map(function(p){return '<option'+(r.port===p?' selected':'')+'>'+esc(p)+'</option>'}).join('')+'</select></div></div><p class="lb" style="margin-top:10px">Cartons in container 整柜箱数</p>'+fld('cartonsB','380','number')+'<div class="sum" style="background:var(--okbg);color:var(--ok)" id="sumB">—</div></div>'+
 '<div class="fl"><p class="lb"><b>Warranty</b> 质保</p>'+fld('warranty','2 years 2年')+'</div>'+
 '<p class="gh">Documents 文件</p>'+
-'<div class="fl"><p class="lb"><b>Catalog</b> 产品目录（上传文件）</p>'+(r.pics&&r.pics.catalog?'<div class="row"><span style="flex:1;font-size:14px;color:var(--ok);align-self:center">'+esc(r.catalogName||'file attached')+'</span><button class="b" onclick="rmPic(\'catalog\')">Remove</button></div>':'<button class="cam" onclick="addCatalog()">Attach file 上传文件</button>')+'</div>'+
+'<div class="fl"><p class="lb"><b>Catalog</b> 产品目录（上传文件）</p>'+(r.pics&&r.pics.catalog?'<div class="row"><span style="flex:1;font-size:14px;color:var(--ok);align-self:center">'+esc(r.catalogName||'file attached')+'</span><button class="b" onclick="rmPic(\'catalog\')">Remove</button></div>':'<button class="cam" onclick="addCatalog()">Attach file 上传文件</button>')+'</div>'+'<div class="fl"><p class="lb"><b>Catalog link</b> 目录链接 · QR</p><div style="display:flex;gap:8px">'+fld('catalogUrl','https://…')+'<button class="b" style="flex:0 0 auto;white-space:nowrap" onclick="qrOpen()">Scan QR 扫码</button></div>'+(r.catalogUrl?'<p class="note" style="padding:6px 0 0;word-break:break-all">'+esc(r.catalogUrl)+'</p>':'')+'</div>'+
 '<div class="fl"><p class="lb"><b>Business license</b> 请提供营业执照复印件</p>'+camBox('license','Photo of the license')+'</div>'+
 '<div class="fl"><p class="lb"><b>Business card</b> 名片照片</p>'+camBox('card','Photo of the card')+'</div>'+
 '<p class="gh">My evaluation 我的评价</p>'+
