@@ -24,6 +24,7 @@ function doGet() {
 function doPost(e) {
   try {
     var p = JSON.parse(e.postData.contents);
+    if (p.action === 'card') return json_(card_(p));   // OCR de la tarjeta, no escribe en Drive
     var dir = target_(p);
     if (p.action === 'sheet') return json_(sheet_(dir, p));
     if (p.action === 'ficha') return json_(put_(dir, p.supplier, 'ficha.txt', Utilities.newBlob(p.text || '', 'text/plain', 'ficha.txt')));
@@ -67,6 +68,37 @@ function sheet_(dir, p) {
   sh.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
   sh.setFrozenRows(1);
   return { ok: true, url: ss.getUrl(), rows: rows.length - 1 };
+}
+
+// Lee la tarjeta con el OCR de Google Drive y devuelve los datos sueltos.
+// Requiere el servicio avanzado "Drive API" activado en el proyecto (Servicios -> Drive API, v2).
+function card_(p) {
+  var blob = Utilities.newBlob(Utilities.base64Decode(p.data), p.type || 'image/jpeg', 'card.jpg');
+  var doc = Drive.Files.insert({ title: 'ocr-tmp-' + Date.now(), mimeType: 'application/vnd.google-apps.document' },
+                               blob, { ocr: true, ocrLanguage: p.lang || 'en' });
+  var text = '';
+  try { text = DocumentApp.openById(doc.id).getBody().getText(); } finally { DriveApp.getFileById(doc.id).setTrashed(true); }
+  return { ok: true, text: text, fields: parseCard_(text) };
+}
+
+function parseCard_(t) {
+  var lines = (t || '').split('\n').map(function (l) { return l.trim(); }).filter(String);
+  var find = function (re) { for (var i = 0; i < lines.length; i++) if (re.test(lines[i])) return lines[i]; return ''; };
+  var tail = function (line) { if (!line) return ''; var m = line.match(/[:：]?\s*([+\d][\d\s().\-]{5,}\d|[A-Za-z0-9_.\-]{4,})\s*$/); return m ? m[1].trim() : ''; };
+  var email = (t.match(/[\w.\-+]+@[\w\-]+\.[\w.\-]+/) || [''])[0];
+  var phones = (t.match(/[+]?\d[\d\s().\-]{7,}\d/g) || []).map(function (s) { return s.trim(); });
+  var whatsLine = find(/whats\s?app/i), wechatLine = find(/wechat|weixin|微信/i), phoneLine = find(/tel|phone|mobile|手机|电话/i);
+  var companyRe = /co\.,?\s*ltd|company|limited|factory|industr|有限公司|集团|公司|厂/i;
+  var company = find(companyRe);
+  var name = '';
+  for (var i = 0; i < lines.length; i++) {
+    var l = lines[i];
+    if (l === company || companyRe.test(l) || /@|www\.|http/i.test(l) || /\d{5,}/.test(l)) continue;
+    if (l.length > 2 && l.length < 40) { name = l; break; }
+  }
+  var whats = tail(whatsLine), wechat = tail(wechatLine), phone = tail(phoneLine) || phones[0] || '';
+  // el telefono de la tarjeta suele servir tambien de whatsapp, pero no lo inventamos
+  return { company: company, contact: name, phone: phone, whats: whats, wechat: wechat, email: email };
 }
 
 function json_(o) {

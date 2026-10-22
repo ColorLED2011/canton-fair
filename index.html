@@ -108,6 +108,12 @@ var CATS=['Lighting 照明','Faucets 水龙头','Hardware 五金','Machinery 机
 var STATUS=['To contact 待联系','Sample requested 已索样','Negotiating 洽谈中','Discarded 已放弃'];
 var SCOL={'To contact 待联系':['var(--wabg)','var(--wa)'],'Sample requested 已索样':['var(--okbg)','var(--ok)'],'Negotiating 洽谈中':['var(--acbg)','var(--ac)'],'Discarded 已放弃':['var(--dabg)','var(--da)']};
 var PICS=[['booth','Booth 展位'],['product','Product 产品'],['card','Card 名片'],['license','License 营业执照'],['catalog','Catalog 目录']];
+function prodKeys(r){return Object.keys(r.pics||{}).filter(function(k){return k==='product'||/^product\d+$/.test(k)})
+.sort(function(a,b){return (a==='product'?1:+a.slice(7))-(b==='product'?1:+b.slice(7))})}
+function picsOf(r){var p=r.pics||{},out=[];if(p.booth)out.push(['booth','Booth 展位']);
+prodKeys(r).forEach(function(k,i){out.push([k,'Product 产品'+(i?' '+(i+1):'')])});
+if(p.card)out.push(['card','Card 名片']);if(p.license)out.push(['license','License 营业执照']);if(p.catalog)out.push(['catalog','Catalog 目录']);
+return out}
 var PORTS=['Shenzhen 深圳','Guangzhou 广州','Ningbo 宁波','Shanghai 上海','Xiamen 厦门','Qingdao 青岛'];
 var CERTS=['CE','RoHS','ISO9001','UL','None 无'];
 var CAP={'20GP':28,'40GP':58,'40HQ':68},WCAP={'20GP':21700,'40GP':26500,'40HQ':26500};
@@ -156,7 +162,7 @@ function qrClose(){if(QR.raf)cancelAnimationFrame(QR.raf);QR.raf=null;if(QR.stre
 /* ---------- guardar todas las fotos / save all photos ---------- */
 var DET={id:null,files:[]};
 function preloadFiles(r){DET={id:r.id,files:[]};
-PICS.forEach(function(p){if(!(r.pics&&r.pics[p[0]])||p[0]==='catalog')return;
+picsOf(r).forEach(function(p){if(p[0]==='catalog')return;
 dbGet('pics',r.id+'_'+p[0]).then(function(b){if(b&&DET.id===r.id)DET.files.push(new File([b],'canton_'+r.n+'_'+p[0]+'.jpg',{type:b.type||'image/jpeg'}))})})}
 function saveAllPhotos(){var r=recSel();if(!r)return;var fs=DET.id===r.id?DET.files.slice():[];
 if(!fs.length){alert('No photos yet 暂无照片');return}
@@ -164,9 +170,9 @@ if(navigator.canShare&&navigator.canShare({files:fs})){navigator.share({files:fs
 fs.forEach(function(f,i){setTimeout(function(){var u=URL.createObjectURL(f),a=document.createElement('a');a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},5000)},i*500)})}
 
 /* ---------- CSV + ZIP ---------- */
-var HEAD=['No','Date','Company 公司名称','Booth 展位号','Self-run export license 自营出口权','CI+PL wet seal 发票箱单盖原章','WeChat video 视频验厂','WeChat ID 微信号','Product 产品','Category 类别','Certifications 国际认证','110V 60Hz','Samples 样品','Sample cost USD','Sample taken','Carton length cm','Carton width cm','Carton height cm','Gross weight per carton kg','MOQ FCA','FCA price USD','FCA place','Cartons FCA','FCA total USD','FCA CBM','FCA weight kg','Container','FOB quantity','FOB price USD','FOB port','Cartons FOB','FOB total USD','FOB CBM','FOB weight kg','Warranty 质保','Rating','Status','Notes','Photos','Catalog link 目录链接'];
+var HEAD=['No','Date','Company 公司名称','Contact 联系人','Phone 电话','WhatsApp','Email','Booth 展位号','Self-run export license 自营出口权','CI+PL wet seal 发票箱单盖原章','WeChat video 视频验厂','WeChat ID 微信号','Product 产品','Category 类别','Certifications 国际认证','110V 60Hz','Samples 样品','Sample cost USD','Sample taken','Carton length cm','Carton width cm','Carton height cm','Gross weight per carton kg','MOQ FCA','FCA price USD','FCA place','Cartons FCA','FCA total USD','FCA CBM','FCA weight kg','Container','FOB quantity','FOB price USD','FOB port','Cartons FOB','FOB total USD','FOB CBM','FOB weight kg','Warranty 质保','Rating','Status','Notes','Photos','Catalog link 目录链接'];
 function rowOf(r){var cbm=num(r.l)*num(r.w)*num(r.h)/1e6;
-return [r.n,new Date(r.ts).toLocaleString(),r.co,r.booth,r.exp?'Yes':'No',r.seal?'Yes':'No',r.video?'Yes':'No',r.wechat,r.prod,r.cat,(r.certs||[]).join(' / '),r.volt?'Yes':'No',r.sample,r.sampleCost,r.sampleTaken?'Yes':'No',r.l,r.w,r.h,r.gw,r.moq,r.fca,r.fcaPlace,r.cartonsF,num(r.moq)*num(r.fca),(cbm*num(r.cartonsF)).toFixed(3),num(r.gw)*num(r.cartonsF),r.cont,r.qty,r.fob,r.port,r.cartonsB,num(r.qty)*num(r.fob),(cbm*num(r.cartonsB)).toFixed(3),num(r.gw)*num(r.cartonsB),r.warranty,r.rating,r.status,(r.notes||'').replace(/\n/g,' '),PICS.filter(function(p){return r.pics&&r.pics[p[0]]}).map(function(p){return r.n+'_'+p[0]+'.jpg'}).join(' '),r.catalogUrl||'']}
+return [r.n,new Date(r.ts).toLocaleString(),r.co,r.contact,r.phone,r.whats,r.email,r.booth,r.exp?'Yes':'No',r.seal?'Yes':'No',r.video?'Yes':'No',r.wechat,r.prod,r.cat,(r.certs||[]).join(' / '),r.volt?'Yes':'No',r.sample,r.sampleCost,r.sampleTaken?'Yes':'No',r.l,r.w,r.h,r.gw,r.moq,r.fca,r.fcaPlace,r.cartonsF,num(r.moq)*num(r.fca),(cbm*num(r.cartonsF)).toFixed(3),num(r.gw)*num(r.cartonsF),r.cont,r.qty,r.fob,r.port,r.cartonsB,num(r.qty)*num(r.fob),(cbm*num(r.cartonsB)).toFixed(3),num(r.gw)*num(r.cartonsB),r.warranty,r.rating,r.status,(r.notes||'').replace(/\n/g,' '),picsOf(r).map(function(p){return r.n+'_'+p[0]+'.jpg'}).join(' '),r.catalogUrl||'']}
 function csvText(){var rows=[HEAD].concat(R.slice().sort(function(a,b){return a.n-b.n}).map(rowOf));
 return '﻿'+rows.map(function(r){return r.map(function(c){c=c==null?'':String(c);return /[";,\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(',')}).join('\r\n')}
 function dl(blob,name){var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},6000)}
@@ -183,7 +189,7 @@ var cdSize=cd.reduce(function(a,b){return a+b.length},0);
 var end=new Uint8Array([80,75,5,6,0,0,0,0].concat(n2(files.length),n2(files.length),n4(cdSize),n4(off),n2(0)));
 return new Blob(parts.concat(cd,[end]),{type:'application/zip'})}
 function exportZip(btn){btn.textContent='Preparing…';var files=[{name:'suppliers.csv',data:new TextEncoder().encode(csvText())}],jobs=[];
-R.forEach(function(r){PICS.forEach(function(p){if(r.pics&&r.pics[p[0]])jobs.push(dbGet('pics',r.id+'_'+p[0]).then(function(b){if(!b)return;return b.arrayBuffer().then(function(ab){files.push({name:'photos/'+String(r.n).padStart(3,'0')+'_'+p[0]+(p[0]==='catalog'?'.'+(r.catalogName||'file.pdf').split('.').pop():'.jpg'),data:new Uint8Array(ab)})})}))})});
+R.forEach(function(r){picsOf(r).forEach(function(p){jobs.push(dbGet('pics',r.id+'_'+p[0]).then(function(b){if(!b)return;return b.arrayBuffer().then(function(ab){files.push({name:'photos/'+String(r.n).padStart(3,'0')+'_'+p[0]+(p[0]==='catalog'?'.'+(r.catalogName||'file.pdf').split('.').pop():'.jpg'),data:new Uint8Array(ab)})})}))})});
 Promise.all(jobs).then(function(){dl(zip(files),'canton-fair-'+new Date().toISOString().slice(0,10)+'.zip');btn.textContent='Download everything (ZIP with photos)'})}
 
 /* ---------- vistas ---------- */
@@ -210,7 +216,7 @@ function rangeRecs(){var a=RANGE.from?new Date(RANGE.from+'T00:00:00').getTime()
 return R.filter(function(r){return r.ts>=a&&r.ts<=b})}
 function rangeSet(k,v){RANGE[k]=v;RANGE.files=null;render()}
 function rangePrepare(){var recs=rangeRecs(),jobs=[];RANGE.busy=1;render();
-recs.forEach(function(r){PICS.forEach(function(p){if(!(r.pics&&r.pics[p[0]])||p[0]==='catalog')return;
+recs.forEach(function(r){picsOf(r).forEach(function(p){if(p[0]==='catalog')return;
 jobs.push(dbGet('pics',r.id+'_'+p[0]).then(function(b){return b?new File([b],'canton_'+r.n+'_'+p[0]+'.jpg',{type:b.type||'image/jpeg'}):null}))})});
 Promise.all(jobs).then(function(fs){RANGE.files=fs.filter(Boolean);RANGE.busy=0;render()})}
 function rangeSave(){var fs=RANGE.files;if(!fs||!fs.length)return;
@@ -238,7 +244,7 @@ function doneList(r){if(Array.isArray(r.driveDone))r.driveDone={};var m=r.driveD
 function clean(t){return String(t||'').replace(/[\\/:*?"<>|]/g,'-').trim()}
 function supFolder(r){return clean(String(r.n).padStart(3,'0')+' - '+(r.co||r.prod||'sin nombre')+(r.booth?' - '+r.booth:''))}
 function ficha(r){var cbm=num(r.l)*num(r.w)*num(r.h)/1e6;
-return ['#'+r.n+'  '+(r.co||'')+'  '+(r.booth||''),'Date 日期: '+new Date(r.ts).toLocaleString(),'Product 产品: '+(r.prod||''),'Category 类别: '+(r.cat||''),
+return ['#'+r.n+'  '+(r.co||'')+'  '+(r.booth||''),'Date 日期: '+new Date(r.ts).toLocaleString(),'Contact 联系人: '+(r.contact||'-'),'Phone 电话: '+(r.phone||'-'),'WhatsApp: '+(r.whats||'-'),'WeChat 微信: '+(r.wechat||'-'),'Email: '+(r.email||'-'),'Product 产品: '+(r.prod||''),'Category 类别: '+(r.cat||''),
 'Self-run export license 自营出口权: '+(r.exp?'Yes':'No'),'CI+PL wet seal 盖原章: '+(r.seal?'Yes':'No'),'WeChat video 视频验厂: '+(r.video?'Yes':'No')+(r.wechat?' ('+r.wechat+')':''),
 'Certifications 国际认证: '+((r.certs||[]).join(', ')||'-'),'110V 60Hz: '+(r.volt?'Yes':'No'),'Samples 样品: '+(r.sample||'-')+(r.sampleCost?' $'+r.sampleCost:''),
 'Carton 外箱: '+(r.l||'?')+'x'+(r.w||'?')+'x'+(r.h||'?')+' cm · '+(r.gw||'?')+' kg · '+cbm.toFixed(3)+' m3',
@@ -246,7 +252,7 @@ return ['#'+r.n+'  '+(r.co||'')+'  '+(r.booth||''),'Date 日期: '+new Date(r.ts
 'FOB: '+(r.cont||'-')+' '+(r.qty||'-')+' pcs x $'+(r.fob||'-')+' = $'+(num(r.qty)*num(r.fob)).toFixed(2)+' · '+(r.port||'-')+' · '+(r.cartonsB||'-')+' cartons',
 'Warranty 质保: '+(r.warranty||'-'),'Rating: '+(r.rating||'-')+'/5','Status: '+(r.status||'-'),'Catalog link: '+(r.catalogUrl||'-'),'Notes 备注: '+(r.notes||'-')].join('\n')}
 function drivePending(){var out=[];driveScope().forEach(function(r){var done=doneList(r);
-PICS.forEach(function(p){if(p[0]==='catalog')return;if(r.pics&&r.pics[p[0]]&&done.indexOf(p[0])<0)out.push({r:r,k:p[0]})});
+picsOf(r).forEach(function(p){if(p[0]==='catalog')return;if(done.indexOf(p[0])<0)out.push({r:r,k:p[0]})});
 if(done.indexOf('ficha')<0)out.push({r:r,k:'ficha'})});return out}
 function drivePost(body){return fetch(DRIVE.url,{method:'POST',body:JSON.stringify(Object.assign(driveTarget(),body))}).then(function(res){return res.json()})}
 function driveUpload(){if(!DRIVE.url){DRIVE.msg='Paste the Drive link first 请先粘贴链接';render();return}
@@ -268,7 +274,7 @@ body.then(function(b){return b?drivePost(b):null})
 .then(function(){if(failed>2){DRIVE.busy=0;DRIVE.msg='Upload failed — check the link and your internet 上传失败';render();return}next(i+1)})}
 next(0)}
 
-function vExport(){var pics=0;R.forEach(function(r){PICS.forEach(function(p){if(r.pics&&r.pics[p[0]])pics++})});
+function vExport(){var pics=0;R.forEach(function(r){pics+=picsOf(r).length});
 return head('Export and backup')+'<main><div class="stat"><div><p>Suppliers</p><strong>'+R.length+'</strong></div><div><p>Photos and files</p><strong>'+pics+'</strong></div></div>'+
 '<div class="fl"><button class="btn p" onclick="exportZip(this)">Download everything (ZIP with photos)</button><p class="note" style="padding:8px 0 0">One file with suppliers.csv and every photo. Open it on your computer and import the CSV into Google Sheets or Odoo.</p></div>'+
 '<div class="fl"><button class="btn g" style="width:100%" onclick="dl(new Blob([csvText()],{type:\'text/csv\'}),\'suppliers.csv\')">Download the CSV only</button></div>'+
@@ -276,7 +282,7 @@ return head('Export and backup')+'<main><div class="stat"><div><p>Suppliers</p><
 '<p class="gh">Install</p><p class="note">iPhone: Safari → Share → "Add to Home Screen". Android: Chrome → menu ⋮ → "Install app". Once installed it runs with no internet and no VPN in China.</p></main>'+navBar()}
 function detailRows(r){var cbm=num(r.l)*num(r.w)*num(r.h)/1e6,fill=cbm*num(r.cartonsB)/(CAP[r.cont]||68)*100,wB=num(r.gw)*num(r.cartonsB);
 function d(a,b){return '<div class="dt"><span>'+a+'</span><span>'+b+'</span></div>'}
-return '<p class="gh">Supplier 供应商</p>'+d('Company 公司名称',esc(r.co||'—'))+d('Booth 展位号',esc(r.booth||'—'))+d('Self-run export license 自营出口权',r.exp?'Yes 是':'No 否')+d('CI and PL with wet seal 盖原章',r.seal?'Yes 是':'No 否')+d('WeChat video 视频验厂',(r.video?'Yes 是':'No 否')+(r.wechat?' · '+esc(r.wechat):''))+
+return '<p class="gh">Supplier 供应商</p>'+d('Company 公司名称',esc(r.co||'—'))+d('Booth 展位号',esc(r.booth||'—'))+(r.contact?d('Contact 联系人',esc(r.contact)):'')+(r.phone?d('Phone 电话',esc(r.phone)):'')+(r.whats?d('WhatsApp',esc(r.whats)):'')+(r.email?d('Email',esc(r.email)):'')+d('Self-run export license 自营出口权',r.exp?'Yes 是':'No 否')+d('CI and PL with wet seal 盖原章',r.seal?'Yes 是':'No 否')+d('WeChat video 视频验厂',(r.video?'Yes 是':'No 否')+(r.wechat?' · '+esc(r.wechat):''))+
 '<p class="gh">Product 产品</p>'+d('Product',esc(r.prod||'—'))+d('Category',esc(r.cat||'—'))+d('Certifications',esc((r.certs||[]).join(', ')||'—'))+d('110V 60Hz',r.volt?'Yes 是':'No 否')+d('Samples 样品',esc(r.sample||'—')+(r.sampleCost?' · $'+r.sampleCost:'')+(r.sampleTaken?' · taken':''))+d('Carton 外箱',(r.l||'?')+'×'+(r.w||'?')+'×'+(r.h||'?')+' cm · '+(r.gw||'?')+' kg · '+cbm.toFixed(3)+' m³')+
 '<p class="gh" style="color:var(--ac)">FCA · MOQ</p>'+d('MOQ · price',(r.moq||'—')+' pcs · '+money(num(r.fca)))+d('Place · cartons',esc(r.fcaPlace||'—')+' · '+(r.cartonsF||'—'))+d('Total',money(num(r.moq)*num(r.fca))+' · '+(cbm*num(r.cartonsF)).toFixed(2)+' m³ · '+Math.round(num(r.gw)*num(r.cartonsF))+' kg')+
 '<p class="gh" style="color:var(--ok)">FOB · Container</p>'+d('Container · quantity',esc(r.cont||'—')+' · '+(r.qty?Number(r.qty).toLocaleString():'—')+' pcs')+d('Price · port',money(num(r.fob))+' · '+esc(r.port||'—'))+d('Total',money(num(r.qty)*num(r.fob))+' · '+(cbm*num(r.cartonsB)).toFixed(1)+' m³ · '+Math.round(wB).toLocaleString()+' kg')+(r.cartonsB?d('Container fill',Math.round(fill)+'%'+(wB>(WCAP[r.cont]||26500)?' · over the weight limit':'')):'')+
@@ -288,7 +294,7 @@ return head('#'+r.n+' '+(r.co||r.prod||''),'<button class="ib" onclick="go(S.bac
 function fillDetailPics(){var r=recSel();if(!r)return;preloadFiles(r);
 if(r.pics&&r.pics.booth)picUrl(r.id+'_booth').then(function(u){var h=document.getElementById('hero');if(u&&h)h.innerHTML='<img src="'+u+'" onclick="showPhoto(\'booth\')">'});
 var t=document.getElementById('tiles');if(!t)return;t.innerHTML='';
-PICS.slice(1).forEach(function(p){if(!(r.pics&&r.pics[p[0]]))return;var d=document.createElement('div');d.innerHTML='<span>'+p[1]+'</span>';d.onclick=function(){showPhoto(p[0])};t.appendChild(d);
+picsOf(r).slice(1).forEach(function(p){var d=document.createElement('div');d.innerHTML='<span>'+p[1]+'</span>';d.onclick=function(){showPhoto(p[0])};t.appendChild(d);
 if(p[0]==='catalog'){d.insertAdjacentHTML('afterbegin','<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--tx2);padding:4px;text-align:center">'+esc(r.catalogName||'file')+'</div>');return}
 picUrl(r.id+'_'+p[0]).then(function(u){if(u)d.insertAdjacentHTML('afterbegin','<img src="'+u+'">')})})}
 function showPhoto(k){var r=recSel();if(k==='catalog'){savePhoto(r.id+'_catalog',r.catalogName||'catalogo');return}S.ph=k;S.v='photo';render()}
@@ -312,14 +318,14 @@ function vForm(){var r=f();
 return head(r.isNew?'New supplier #'+r.n:'Edit #'+r.n,'<button class="ib" onclick="cancelForm()">'+svg('x')+'</button>','<span class="pill" style="background:var(--wabg);color:var(--wa)">'+(navigator.onLine?'Online':'Offline')+'</span>')+'<main>'+
 '<p class="gh">Supplier 供应商</p>'+
 '<div class="fl"><p class="lb"><b>Booth photo</b> 展位照片 <span class="req">*</span></p>'+camBox('booth','Take photo / choose from gallery')+er('booth')+'</div>'+
-'<div class="fl"><div class="g2"><div><p class="lb"><b>Booth no.</b> 展位号</p>'+fld('booth','11.2 C15')+'</div><div><p class="lb"><b>Company</b> 公司名称</p>'+fld('co','Zhongshan Bright')+'</div></div></div>'+
+'<div class="fl"><div class="g2"><div><p class="lb"><b>Booth no.</b> 展位号</p>'+fld('booth','11.2 C15')+'</div><div><p class="lb"><b>Company</b> 公司名称</p>'+fld('co','Zhongshan Bright')+'</div><div><p class="lb"><b>Contact</b> 联系人</p>'+fld('contact','Kevin Liu')+'</div><div><p class="lb"><b>Phone</b> 电话</p>'+fld('phone','+86 138…')+'</div><div><p class="lb"><b>WhatsApp</b></p>'+fld('whats','+86 138…')+'</div><div><p class="lb"><b>Email</b></p>'+fld('email','sales@…')+'</div></div></div>'+
 '<div class="fl"><p class="lb"><b>Self-run export license?</b> 是否有自营出口权？ <span class="req">*</span></p><div class="row">'+chip('exp',1,'Yes 是')+chip('exp',0,'No 否')+'</div>'+er('exp')+'</div>'+
 '<div class="fl"><p class="lb"><b>Can you issue the Commercial Invoice and Packing List with the original company wet seal?</b> 能否提供加盖公司公章原件的商业发票和装箱单？ <span class="req">*</span></p><div class="row">'+chip('seal',1,'Yes 是')+chip('seal',0,'No 否')+'</div>'+er('seal')+'</div>'+
 '<div class="fl"><p class="lb"><b>Live WeChat video call?</b> (production line, machinery running, raw material warehouse, company sign at the entrance) 能否微信视频实时展示生产线、设备、原材料仓库及公司招牌？</p><div class="row">'+chip('video',1,'Yes 是')+chip('video',0,'No 否')+'</div>'+(r.video===1?'<p class="lb" style="margin-top:10px"><b>WeChat ID</b> 微信号</p>'+fld('wechat','kevin_liu88'):'')+'</div>'+
 '<p class="gh">Product 产品</p>'+
 '<div class="fl"><p class="lb"><b>Product</b> 产品 <span class="req">*</span></p>'+fld('prod','LED panel 60x60 40W')+er('prod')+'</div>'+
 '<div class="fl"><p class="lb"><b>Category</b> 类别 <span class="req">*</span></p><select onchange="setF(\'cat\',this.value)"><option value="">Select 选择…</option>'+catsAll().map(function(c){return '<option'+(r.cat===c?' selected':'')+'>'+esc(c)+'</option>'}).join('')+'<option value="__o"'+(r.cat==='__o'?' selected':'')+'>Other 其他…</option></select>'+(r.cat==='__o'?'<div style="margin-top:8px">'+fld('catOther','Solar 太阳能')+'</div>':'')+er('cat')+'</div>'+
-'<div class="fl"><p class="lb"><b>Product photo</b> 产品照片</p>'+camBox('product','Take photo / choose from gallery')+'</div>'+
+'<div class="fl"><p class="lb"><b>Product photos</b> 产品照片 ('+prodKeys(r).length+')</p>'+prodKeys(r).map(function(k){return camBox(k,'')}).join('')+'<button class="cam" style="margin-top:8px" onclick="addProd()">'+svg('cam','width:18px;height:18px')+' Add photo 添加照片</button></div>'+
 '<div class="fl"><p class="lb"><b>Certifications</b> 国际认证</p><div class="row">'+CERTS.map(function(c){return '<button class="b'+((r.certs||[]).indexOf(c)>=0?' on':'')+'" onclick="toggleCert(\''+c+'\')">'+c+'</button>'}).join('')+'</div></div>'+
 '<div class="fl"><p class="lb"><b>110–120V / 60Hz version, plug A/B (Venezuela)?</b> 是否有110–120V/60Hz版本？</p><div class="row">'+chip('volt',1,'Yes 是')+chip('volt',0,'No 否')+'</div></div>'+
 '<div class="fl"><p class="lb"><b>Samples</b> 样品</p><div class="row">'+chip('sample','Free 免费','Free 免费')+chip('sample','Paid 收费','Paid 收费')+chip('sample','Not available 不提供','N/A 不提供')+'</div>'+(r.sample==='Paid 收费'?'<p class="lb" style="margin-top:10px"><b>Sample cost</b> 样品费 USD</p>'+fld('sampleCost','35','number'):'')+(r.sample&&r.sample!=='Not available 不提供'?'<p class="lb" style="margin-top:10px"><b>Sample taken?</b> 已取样品？</p><div class="row">'+chip('sampleTaken',1,'Yes 是')+chip('sampleTaken',0,'No 否')+'</div>':'')+'</div>'+
@@ -332,13 +338,28 @@ return head(r.isNew?'New supplier #'+r.n:'Edit #'+r.n,'<button class="ib" onclic
 '<p class="gh">Documents 文件</p>'+
 '<div class="fl"><p class="lb"><b>Catalog</b> 产品目录（上传文件）</p>'+(r.pics&&r.pics.catalog?'<div class="row"><span style="flex:1;font-size:14px;color:var(--ok);align-self:center">'+esc(r.catalogName||'file attached')+'</span><button class="b" onclick="rmPic(\'catalog\')">Remove</button></div>':'<button class="cam" onclick="addCatalog()">Attach file 上传文件</button>')+'</div>'+'<div class="fl"><p class="lb"><b>Catalog link</b> 目录链接 · QR</p><div style="display:flex;gap:8px">'+fld('catalogUrl','https://…')+'<button class="b" style="flex:0 0 auto;white-space:nowrap" onclick="qrOpen()">Scan QR 扫码</button></div>'+(r.catalogUrl?'<p class="note" style="padding:6px 0 0;word-break:break-all">'+esc(r.catalogUrl)+'</p>':'')+'</div>'+
 '<div class="fl"><p class="lb"><b>Business license</b> 请提供营业执照复印件</p>'+camBox('license','Photo of the license')+'</div>'+
-'<div class="fl"><p class="lb"><b>Business card</b> 名片照片</p>'+camBox('card','Photo of the card')+'</div>'+
+'<div class="fl"><p class="lb"><b>Business card</b> 名片照片</p>'+camBox('card','Photo of the card')+(r.pics&&r.pics.card?(CARD.busy?'<button class="btn g" style="width:100%;margin-top:8px" disabled>Reading… 识别中</button>':'<button class="btn g" style="width:100%;margin-top:8px" onclick="readCard()">Read card 读取名片</button>'):'')+(CARD.msg?'<p class="note" style="padding:8px 0 0">'+esc(CARD.msg)+'</p>':'')+'</div>'+
 '<p class="gh">My evaluation 我的评价</p>'+
 '<div class="fl"><p class="lb"><b>Rating</b></p><div>'+[1,2,3,4,5].map(function(i){return '<button class="star'+((r.rating||0)>=i?' on':'')+'" onclick="setF(\'rating\','+i+')">★</button>'}).join('')+'</div></div>'+
 '<div class="fl"><p class="lb"><b>Notes</b> 备注</p><textarea oninput="S.f.notes=this.value" placeholder="Good finish, owner replies fast…">'+esc(r.notes||'')+'</textarea></div>'+
 '<div class="fl"><p class="lb"><b>Follow-up</b> 跟进状态</p><div class="g2">'+STATUS.map(function(s){return chip('status',s,s)}).join('')+'</div></div>'+
 '<div class="fl" style="border:0">'+(Object.keys(S.err).length?'<p class="err" style="margin:0 0 10px">Please complete the fields marked in red</p>':'')+'<button class="btn p" onclick="save()">Save supplier</button></div>'+
 '</main>'}
+function addProd(){var r=f(),ks=prodKeys(r),n=1;while(ks.indexOf(n===1?'product':'product'+n)>=0)n++;
+addPic(n===1?'product':'product'+n)}
+var CARD={busy:0,msg:''};
+// lee la tarjeta con el OCR de Drive (via Apps Script): necesita internet
+function readCard(){var r=f();if(!DRIVE.url){CARD.msg='Paste the Drive link in Export first 请先在 Export 粘贴链接';render();return}
+CARD.busy=1;CARD.msg='';render();
+dbGet('pics',r.id+'_card').then(function(blob){if(!blob)throw new Error('no card');
+return b64(blob).then(function(d){return fetch(DRIVE.url,{method:'POST',body:JSON.stringify({action:'card',type:blob.type||'image/jpeg',data:d})}).then(function(res){return res.json()})})})
+.then(function(out){CARD.busy=0;
+if(!out||!out.ok||!out.fields){CARD.msg='Could not read the card 未能识别';render();return}
+var g=out.fields,filled=[];
+[['company','co'],['contact','contact'],['phone','phone'],['whats','whats'],['wechat','wechat'],['email','email']].forEach(function(pair){
+var v=(g[pair[0]]||'').trim();if(v&&!(f()[pair[1]]||'').trim()){f()[pair[1]]=v;filled.push(pair[1])}});
+CARD.msg=filled.length?'Filled: '+filled.join(', ')+' — check before saving 请核对':'Nothing new found 没有新信息';render()})
+.catch(function(){CARD.busy=0;CARD.msg='Read failed — check internet 识别失败';render()})}
 function addCatalog(){pickFile(f().id+'_catalog',function(){f().pics.catalog=1;render()})}
 function calc(){var r=f();if(!r)return;var c=num(r.l)*num(r.w)*num(r.h)/1e6,a=document.getElementById('sumF'),b=document.getElementById('sumB');if(!a)return;
 a.textContent='Total '+money(num(r.moq)*num(r.fca))+' · '+(c*num(r.cartonsF)).toFixed(2)+' m³ · '+Math.round(num(r.gw)*num(r.cartonsF))+' kg';
@@ -348,8 +369,8 @@ b.textContent='Total '+money(num(r.qty)*num(r.fob))+' · '+v.toFixed(1)+' m³ ·
 /* ---------- acciones ---------- */
 function recSel(){for(var i=0;i<R.length;i++)if(R[i].id===S.sel)return R[i]}
 function openRec(id){S.sel=id;S.v='detail';render()}
-function newForm(){S.f={id:uid(),n:(R.reduce(function(m,r){return Math.max(m,r.n)},0)+1),isNew:1,pics:{},certs:[],cat:'',sample:'',rating:0,status:STATUS[0],fcaPlace:'Factory 工厂',cont:'40HQ',port:PORTS[0]};S.err={};S.back=S.v;S.v='form';render();window.scrollTo(0,0)}
-function editRec(id){var r=R.filter(function(x){return x.id===id})[0];S.f=JSON.parse(JSON.stringify(r));S.f.isNew=0;S.err={};S.back='detail';S.v='form';render();window.scrollTo(0,0)}
+function newForm(){CARD={busy:0,msg:''};S.f={id:uid(),n:(R.reduce(function(m,r){return Math.max(m,r.n)},0)+1),isNew:1,pics:{},certs:[],cat:'',sample:'',rating:0,status:STATUS[0],fcaPlace:'Factory 工厂',cont:'40HQ',port:PORTS[0]};S.err={};S.back=S.v;S.v='form';render();window.scrollTo(0,0)}
+function editRec(id){CARD={busy:0,msg:''};var r=R.filter(function(x){return x.id===id})[0];S.f=JSON.parse(JSON.stringify(r));S.f.isNew=0;S.err={};S.back='detail';S.v='form';render();window.scrollTo(0,0)}
 function cancelForm(){var r=f();if(r.isNew)Object.keys(r.pics||{}).forEach(function(k){dbDel('pics',r.id+'_'+k)});S.f=null;S.v=S.back==='detail'?'detail':(S.back||'list');render()}
 function save(){var r=f();S.err={};
 if(!(r.pics&&r.pics.booth))S.err.booth='Take the booth photo first';
@@ -364,7 +385,7 @@ var i=R.map(function(x){return x.id}).indexOf(r.id);if(i>=0)R[i]=r;else R.push(r
 if(CATS.indexOf(cat)<0&&catsAll().indexOf(cat)<0)CATS.push(cat);
 S.f=null;S.sel=r.id;S.v=isNew?'list':'detail';render()})}
 function delRec(id){if(!confirm('Delete this supplier and its photos? This cannot be undone.'))return;
-PICS.forEach(function(p){dbDel('pics',id+'_'+p[0]);if(URLS[id+'_'+p[0]]){URL.revokeObjectURL(URLS[id+'_'+p[0]]);delete URLS[id+'_'+p[0]]}});
+var rec=R.filter(function(x){return x.id===id})[0]||{};Object.keys(rec.pics||{}).forEach(function(k){dbDel('pics',id+'_'+k);if(URLS[id+'_'+k]){URL.revokeObjectURL(URLS[id+'_'+k]);delete URLS[id+'_'+k]}});
 dbDel('recs',id).then(function(){R=R.filter(function(r){return r.id!==id});S.v='list';render()})}
 function wipe(){if(!confirm('This deletes ALL suppliers and photos on this phone. Are you sure? Export the ZIP first.'))return;
 if(!confirm('Last confirmation: everything will be deleted.'))return;
