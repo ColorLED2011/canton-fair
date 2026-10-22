@@ -204,11 +204,75 @@ return ks.map(function(k,i){var id=key+i,o=S.open[id]!==false;
 return '<div class="grp" onclick="S.open[\''+id+'\']='+(!o)+';render()"><span>'+esc(k)+'</span><span style="color:var(--tx2);font-weight:400">'+g[k].length+' '+(o?'▲':'▼')+'</span></div>'+(o?g[k].sort(function(a,b){return (b.rating||0)-(a.rating||0)}).map(cardHtml).join(''):'')}).join('')}
 function vCat(){return head('By category 按类别')+'<main>'+grouped('cat',catsAll())+'</main><button class="fab" onclick="newForm()">+</button>'+navBar()}
 function vStatus(){return head('By status 跟进状态')+'<main>'+grouped('status',STATUS)+'</main><button class="fab" onclick="newForm()">+</button>'+navBar()}
+/* ---------- fotos por rango de fecha / photos by date range ---------- */
+var RANGE={from:'',to:'',files:null,busy:0};
+function rangeRecs(){var a=RANGE.from?new Date(RANGE.from+'T00:00:00').getTime():0,b=RANGE.to?new Date(RANGE.to+'T23:59:59').getTime():Infinity;
+return R.filter(function(r){return r.ts>=a&&r.ts<=b})}
+function rangeSet(k,v){RANGE[k]=v;RANGE.files=null;render()}
+function rangePrepare(){var recs=rangeRecs(),jobs=[];RANGE.busy=1;render();
+recs.forEach(function(r){PICS.forEach(function(p){if(!(r.pics&&r.pics[p[0]])||p[0]==='catalog')return;
+jobs.push(dbGet('pics',r.id+'_'+p[0]).then(function(b){return b?new File([b],'canton_'+r.n+'_'+p[0]+'.jpg',{type:b.type||'image/jpeg'}):null}))})});
+Promise.all(jobs).then(function(fs){RANGE.files=fs.filter(Boolean);RANGE.busy=0;render()})}
+function rangeSave(){var fs=RANGE.files;if(!fs||!fs.length)return;
+if(navigator.canShare&&navigator.canShare({files:fs})){navigator.share({files:fs,title:'Canton Fair photos'}).catch(function(){});return}
+fs.forEach(function(f,i){setTimeout(function(){var u=URL.createObjectURL(f),a=document.createElement('a');a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},5000)},i*500)})}
+
+/* ---------- subir fotos a Drive via Apps Script ---------- */
+var PHASES=[{k:'f1',t:'Phase 1 · Oct 15–22',id:'1DZjMsj2h5Mf3298qz8qTfJNbIpgRJ_Mj',a:'2026-10-15',b:'2026-10-22'},
+{k:'f2',t:'Phase 2 · Oct 23–30',id:'1M336dCDZj2A3nGZXQ7eFCs3V4xGu75ts',a:'2026-10-23',b:'2026-10-30'},
+{k:'f3',t:'Phase 3 · Oct 31–Nov 7',id:'19DBpqH14k3JXPl9Yqn2bhfykk-FdoZxq',a:'2026-10-31',b:'2026-11-07'}];
+var CATROOT='13u9gLfI6OLegoIPUsMbBcvaDNW-1Y1X2';
+var DRIVE={url:'',dest:'f1',cat:'',busy:0,msg:''};
+try{DRIVE.url=localStorage.getItem('driveUrl')||''}catch(e){}
+function driveSet(v){DRIVE.url=(v||'').trim();try{localStorage.setItem('driveUrl',DRIVE.url)}catch(e){}}
+function driveDest(v){DRIVE.dest=v;DRIVE.msg='';render()}
+function driveCat(v){DRIVE.cat=v;DRIVE.msg='';render()}
+function b64(blob){return new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(String(fr.result).split(',')[1])};fr.onerror=rej;fr.readAsDataURL(blob)})}
+function phase(k){for(var i=0;i<PHASES.length;i++)if(PHASES[i].k===k)return PHASES[i]}
+function driveScope(){if(DRIVE.dest==='cat')return DRIVE.cat?R.filter(function(r){return r.cat===DRIVE.cat}):[];
+var ph=phase(DRIVE.dest),a=new Date(ph.a+'T00:00:00').getTime(),b=new Date(ph.b+'T23:59:59').getTime();
+return R.filter(function(r){return r.ts>=a&&r.ts<=b})}
+function driveTarget(){return DRIVE.dest==='cat'?{dest:CATROOT,sub:DRIVE.cat}:{dest:phase(DRIVE.dest).id}}
+function destKey(){return DRIVE.dest==='cat'?'cat:'+DRIVE.cat:DRIVE.dest}
+function doneList(r){if(Array.isArray(r.driveDone))r.driveDone={};var m=r.driveDone||(r.driveDone={});return m[destKey()]||(m[destKey()]=[])}
+function clean(t){return String(t||'').replace(/[\\/:*?"<>|]/g,'-').trim()}
+function supFolder(r){return clean(String(r.n).padStart(3,'0')+' - '+(r.co||r.prod||'sin nombre')+(r.booth?' - '+r.booth:''))}
+function ficha(r){var cbm=num(r.l)*num(r.w)*num(r.h)/1e6;
+return ['#'+r.n+'  '+(r.co||'')+'  '+(r.booth||''),'Date 日期: '+new Date(r.ts).toLocaleString(),'Product 产品: '+(r.prod||''),'Category 类别: '+(r.cat||''),
+'Self-run export license 自营出口权: '+(r.exp?'Yes':'No'),'CI+PL wet seal 盖原章: '+(r.seal?'Yes':'No'),'WeChat video 视频验厂: '+(r.video?'Yes':'No')+(r.wechat?' ('+r.wechat+')':''),
+'Certifications 国际认证: '+((r.certs||[]).join(', ')||'-'),'110V 60Hz: '+(r.volt?'Yes':'No'),'Samples 样品: '+(r.sample||'-')+(r.sampleCost?' $'+r.sampleCost:''),
+'Carton 外箱: '+(r.l||'?')+'x'+(r.w||'?')+'x'+(r.h||'?')+' cm · '+(r.gw||'?')+' kg · '+cbm.toFixed(3)+' m3',
+'FCA: MOQ '+(r.moq||'-')+' x $'+(r.fca||'-')+' = $'+(num(r.moq)*num(r.fca)).toFixed(2)+' · '+(r.fcaPlace||'-')+' · '+(r.cartonsF||'-')+' cartons',
+'FOB: '+(r.cont||'-')+' '+(r.qty||'-')+' pcs x $'+(r.fob||'-')+' = $'+(num(r.qty)*num(r.fob)).toFixed(2)+' · '+(r.port||'-')+' · '+(r.cartonsB||'-')+' cartons',
+'Warranty 质保: '+(r.warranty||'-'),'Rating: '+(r.rating||'-')+'/5','Status: '+(r.status||'-'),'Catalog link: '+(r.catalogUrl||'-'),'Notes 备注: '+(r.notes||'-')].join('\n')}
+function drivePending(){var out=[];driveScope().forEach(function(r){var done=doneList(r);
+PICS.forEach(function(p){if(p[0]==='catalog')return;if(r.pics&&r.pics[p[0]]&&done.indexOf(p[0])<0)out.push({r:r,k:p[0]})});
+if(done.indexOf('ficha')<0)out.push({r:r,k:'ficha'})});return out}
+function drivePost(body){return fetch(DRIVE.url,{method:'POST',body:JSON.stringify(Object.assign(driveTarget(),body))}).then(function(res){return res.json()})}
+function driveUpload(){if(!DRIVE.url){DRIVE.msg='Paste the Drive link first 请先粘贴链接';render();return}
+if(DRIVE.dest==='cat'&&!DRIVE.cat){DRIVE.msg='Choose a category first 请先选择类别';render();return}
+var list=drivePending(),scope=driveScope();
+if(!list.length&&!scope.length){DRIVE.msg='Nothing to upload here 没有要上传的内容';render();return}
+DRIVE.busy=1;var done=0,failed=0;
+function finish(){DRIVE.busy=0;DRIVE.msg=done+' files uploaded 已上传'+(failed?' · '+failed+' failed 失败':'');render()}
+function sheet(){DRIVE.msg='Updating the sheet 更新表格…';render();
+drivePost({action:'sheet',name:'Suppliers',header:HEAD,rows:scope.map(function(r){return rowOf(r).map(function(c){return c==null?'':c})})})
+.then(function(){finish()}).catch(function(){failed++;finish()})}
+function next(i){if(i>=list.length){sheet();return}
+var it=list[i],r=it.r;DRIVE.msg='Uploading '+(i+1)+'/'+list.length+'…';render();
+var body=it.k==='ficha'?Promise.resolve({action:'ficha',supplier:supFolder(r),text:ficha(r)})
+:dbGet('pics',r.id+'_'+it.k).then(function(blob){if(!blob)return null;return b64(blob).then(function(d){return {supplier:supFolder(r),name:it.k+'.jpg',type:blob.type||'image/jpeg',data:d}})});
+body.then(function(b){return b?drivePost(b):null})
+.then(function(out){if(out&&out.ok){done++;doneList(r).push(it.k);return dbPut('recs',JSON.parse(JSON.stringify(r)))}if(out)failed++})
+.catch(function(){failed++})
+.then(function(){if(failed>2){DRIVE.busy=0;DRIVE.msg='Upload failed — check the link and your internet 上传失败';render();return}next(i+1)})}
+next(0)}
+
 function vExport(){var pics=0;R.forEach(function(r){PICS.forEach(function(p){if(r.pics&&r.pics[p[0]])pics++})});
 return head('Export and backup')+'<main><div class="stat"><div><p>Suppliers</p><strong>'+R.length+'</strong></div><div><p>Photos and files</p><strong>'+pics+'</strong></div></div>'+
 '<div class="fl"><button class="btn p" onclick="exportZip(this)">Download everything (ZIP with photos)</button><p class="note" style="padding:8px 0 0">One file with suppliers.csv and every photo. Open it on your computer and import the CSV into Google Sheets or Odoo.</p></div>'+
 '<div class="fl"><button class="btn g" style="width:100%" onclick="dl(new Blob([csvText()],{type:\'text/csv\'}),\'suppliers.csv\')">Download the CSV only</button></div>'+
-'<p class="gh">Data</p><div class="fl"><p class="note" style="padding:0 0 10px">Everything is stored inside this phone, no internet needed. Export at least once a day to keep a backup off the phone.</p><button class="btn g" style="width:100%;color:var(--da)" onclick="wipe()">Delete all data</button></div>'+
+'<p class="gh">Photos to phone 照片存到手机</p>'+'<div class="fl"><div class="g2"><div><p class="lb">From 从</p><input type="date" value="'+RANGE.from+'" onchange="rangeSet(\'from\',this.value)"></div><div><p class="lb">To 到</p><input type="date" value="'+RANGE.to+'" onchange="rangeSet(\'to\',this.value)"></div></div><p class="note" style="padding:8px 0">'+rangeRecs().length+' suppliers in this range'+(RANGE.from||RANGE.to?'':' (all dates 全部)')+'</p>'+(RANGE.busy?'<button class="btn g" style="width:100%" disabled>Preparing… 准备中</button>':(RANGE.files&&RANGE.files.length)?'<button class="btn p" onclick="rangeSave()">Save '+RANGE.files.length+' photos to phone 保存照片</button>':'<button class="btn g" style="width:100%" onclick="rangePrepare()">Prepare photos 准备照片</button>')+(RANGE.files&&!RANGE.files.length?'<p class="note" style="padding:8px 0 0">No photos in this range 此范围内没有照片</p>':'')+'</div>'+'<p class="gh">Google Drive</p>'+'<div class="fl"><p class="lb">Apps Script link (colorlednaguanagua) 云端链接</p><input type="text" value="'+esc(DRIVE.url)+'" placeholder="https://script.google.com/.../exec" onchange="driveSet(this.value)"><p class="lb" style="margin-top:12px">Where to save 保存到</p><div class="g2">'+PHASES.map(function(ph){return '<button class="b'+(DRIVE.dest===ph.k?' on':'')+'" onclick="driveDest(\''+ph.k+'\')">'+ph.t+'</button>'}).join('')+'<button class="b'+(DRIVE.dest==='cat'?' on':'')+'" onclick="driveDest(\'cat\')">By category 按类别</button></div>'+(DRIVE.dest==='cat'?'<select style="margin-top:8px" onchange="driveCat(this.value)"><option value="">Choose category 选择类别…</option>'+catsAll().map(function(c){return '<option'+(DRIVE.cat===c?' selected':'')+'>'+esc(c)+'</option>'}).join('')+'</select>':'')+'<p class="note" style="padding:8px 0">'+driveScope().length+' suppliers · '+drivePending().length+' files pending. Already-uploaded files are skipped. Needs internet.</p>'+(DRIVE.busy?'<button class="btn g" style="width:100%" disabled>'+esc(DRIVE.msg||'Uploading…')+'</button>':'<button class="btn g" style="width:100%" onclick="driveUpload()">Upload to Drive 上传到云端</button>')+(DRIVE.msg&&!DRIVE.busy?'<p class="note" style="padding:8px 0 0">'+esc(DRIVE.msg)+'</p>':'')+'</div>'+'<p class="gh">Data</p><div class="fl"><p class="note" style="padding:0 0 10px">Everything is stored inside this phone, no internet needed. Export at least once a day to keep a backup off the phone.</p><button class="btn g" style="width:100%;color:var(--da)" onclick="wipe()">Delete all data</button></div>'+
 '<p class="gh">Install</p><p class="note">iPhone: Safari → Share → "Add to Home Screen". Android: Chrome → menu ⋮ → "Install app". Once installed it runs with no internet and no VPN in China.</p></main>'+navBar()}
 function detailRows(r){var cbm=num(r.l)*num(r.w)*num(r.h)/1e6,fill=cbm*num(r.cartonsB)/(CAP[r.cont]||68)*100,wB=num(r.gw)*num(r.cartonsB);
 function d(a,b){return '<div class="dt"><span>'+a+'</span><span>'+b+'</span></div>'}

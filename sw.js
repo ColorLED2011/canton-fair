@@ -1,4 +1,4 @@
-var CACHE = 'canton-v4';
+var CACHE = 'canton-v7';
 var FILES = ['./', './index.html', './manifest.webmanifest', './jsqr.min.js', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
 
 self.addEventListener('install', function (e) {
