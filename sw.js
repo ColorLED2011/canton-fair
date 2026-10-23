@@ -1,5 +1,5 @@
-var CACHE = 'canton-v9';
-var FILES = ['./', './index.html', './manifest.webmanifest', './jsqr.min.js', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
+var CACHE = 'canton-v11';
+var FILES = ['./', './index.html', './manifest.webmanifest', './jsqr.min.js', './tesseract.min.js', './worker.min.js', './tesseract-core-simd-lstm.wasm.js', './eng.traineddata.gz', './chi_sim.traineddata.gz', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(

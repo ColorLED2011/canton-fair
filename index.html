@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Canton Fair · COLOR LED</title>
 <script src="jsqr.min.js" defer></script>
+<script src="tesseract.min.js" defer></script>
 <style>
 :root{--bg:#f5f4f0;--card:#fff;--tx:#1d1d1b;--tx2:#5f5e5a;--tx3:#8a8880;--bd:#e2e0d9;--ac:#0f766e;--acbg:#e1f5ee;--wa:#854f0b;--wabg:#faeeda;--da:#a32d2d;--dabg:#fcebeb;--ok:#3b6d11;--okbg:#eaf3de;--r:10px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -338,7 +339,7 @@ return head(r.isNew?'New supplier #'+r.n:'Edit #'+r.n,'<button class="ib" onclic
 '<p class="gh">Documents 文件</p>'+
 '<div class="fl"><p class="lb"><b>Catalog</b> 产品目录（上传文件）</p>'+(r.pics&&r.pics.catalog?'<div class="row"><span style="flex:1;font-size:14px;color:var(--ok);align-self:center">'+esc(r.catalogName||'file attached')+'</span><button class="b" onclick="rmPic(\'catalog\')">Remove</button></div>':'<button class="cam" onclick="addCatalog()">Attach file 上传文件</button>')+'</div>'+'<div class="fl"><p class="lb"><b>Catalog link</b> 目录链接 · QR</p><div style="display:flex;gap:8px">'+fld('catalogUrl','https://…')+'<button class="b" style="flex:0 0 auto;white-space:nowrap" onclick="qrOpen()">Scan QR 扫码</button></div>'+(r.catalogUrl?'<p class="note" style="padding:6px 0 0;word-break:break-all">'+esc(r.catalogUrl)+'</p>':'')+'</div>'+
 '<div class="fl"><p class="lb"><b>Business license</b> 请提供营业执照复印件</p>'+camBox('license','Photo of the license')+'</div>'+
-'<div class="fl"><p class="lb"><b>Business card</b> 名片照片</p>'+camBox('card','Photo of the card')+(r.pics&&r.pics.card?(CARD.busy?'<button class="btn g" style="width:100%;margin-top:8px" disabled>Reading… 识别中</button>':'<button class="btn g" style="width:100%;margin-top:8px" onclick="readCard()">Read card 读取名片</button>'):'')+(CARD.msg?'<p class="note" style="padding:8px 0 0">'+esc(CARD.msg)+'</p>':'')+'</div>'+
+'<div class="fl"><p class="lb"><b>Business card</b> 名片照片</p>'+camBox('card','Photo of the card')+(r.pics&&r.pics.card?(CARD.busy?'<button class="btn g" style="width:100%;margin-top:8px" disabled>Reading… 识别中</button>':'<button class="btn g" style="width:100%;margin-top:8px" onclick="readCard()">Read card 读取名片</button>'):'')+(CARD.msg?'<p class="note" id="cardmsg" style="padding:8px 0 0">'+esc(CARD.msg)+'</p>':'')+'</div>'+
 '<p class="gh">My evaluation 我的评价</p>'+
 '<div class="fl"><p class="lb"><b>Rating</b></p><div>'+[1,2,3,4,5].map(function(i){return '<button class="star'+((r.rating||0)>=i?' on':'')+'" onclick="setF(\'rating\','+i+')">★</button>'}).join('')+'</div></div>'+
 '<div class="fl"><p class="lb"><b>Notes</b> 备注</p><textarea oninput="S.f.notes=this.value" placeholder="Good finish, owner replies fast…">'+esc(r.notes||'')+'</textarea></div>'+
@@ -348,17 +349,26 @@ return head(r.isNew?'New supplier #'+r.n:'Edit #'+r.n,'<button class="ib" onclic
 function addProd(){var r=f(),ks=prodKeys(r),n=1;while(ks.indexOf(n===1?'product':'product'+n)>=0)n++;
 addPic(n===1?'product':'product'+n)}
 var CARD={busy:0,msg:''};
-// lee la tarjeta con el OCR de Drive (via Apps Script): necesita internet
-function readCard(){var r=f();if(!DRIVE.url){CARD.msg='Paste the Drive link in Export first 请先在 Export 粘贴链接';render();return}
-CARD.busy=1;CARD.msg='';render();
+// nombre de la empresa en el texto de la tarjeta (el OCR chino separa los caracteres: se juntan)
+function tidy(x){return String(x||'').replace(/([\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])/g,'$1').replace(/\s{2,}/g,' ').trim()}
+function companyFrom(t){var lines=(t||'').split('\n').map(function(l){return l.trim()}).filter(Boolean);
+var lat=/co\.,?\s*ltd|company|limited|factory|industr|enterprise|trading|lighting|hardware/i,cjk=/有限公司|集团|公司|厂/;
+var inLat='',inCjk='',other='';
+for(var i=0;i<lines.length;i++){var l=tidy(lines[i]);if(l.length>60)continue;
+if(!inLat&&lat.test(l))inLat=l;
+if(!inCjk&&cjk.test(l))inCjk=l;
+if(!other&&l.length>5&&!/@|www\.|http/i.test(l)&&!/\d{5,}/.test(l))other=l}
+return inLat||inCjk||other||''}
+// OCR dentro del telefono (tesseract): funciona sin internet y sin VPN
+function readCard(){var r=f();if(!window.Tesseract){CARD.msg='OCR not loaded — open the app once with internet 请联网打开一次';render();return}
+CARD.busy=1;CARD.msg='Reading… 识别中';render();
 dbGet('pics',r.id+'_card').then(function(blob){if(!blob)throw new Error('no card');
-return b64(blob).then(function(d){return fetch(DRIVE.url,{method:'POST',body:JSON.stringify({action:'card',type:blob.type||'image/jpeg',data:d})}).then(function(res){return res.json()})})})
-.then(function(out){CARD.busy=0;
-if(!out||!out.ok||!out.fields){CARD.msg='Could not read the card 未能识别';render();return}
-var co=((out.fields||{}).company||'').trim();
-if(!co){CARD.msg='Company name not found 未找到公司名称';render();return}
+return Tesseract.recognize(blob,'eng+chi_sim',{workerPath:'worker.min.js',corePath:'tesseract-core-simd-lstm.wasm.js',langPath:'.',gzip:true,
+logger:function(m){if(m.status==='recognizing text'){CARD.msg='Reading… '+Math.round(m.progress*100)+'%';var e=document.getElementById('cardmsg');if(e)e.textContent=CARD.msg}}})})
+.then(function(out){CARD.busy=0;var co=companyFrom(out&&out.data&&out.data.text);
+if(!co){CARD.msg='Company name not found — type it 未找到，请手动输入';render();return}
 f().co=co;CARD.msg='Company 公司名称: '+co+' — check before saving 请核对';render()})
-.catch(function(){CARD.busy=0;CARD.msg='Read failed — check internet 识别失败';render()})}
+.catch(function(e){CARD.busy=0;CARD.msg='Read failed 识别失败: '+(e&&e.message||'');render()})}
 function addCatalog(){pickFile(f().id+'_catalog',function(){f().pics.catalog=1;render()})}
 function calc(){var r=f();if(!r)return;var c=num(r.l)*num(r.w)*num(r.h)/1e6,a=document.getElementById('sumF'),b=document.getElementById('sumB');if(!a)return;
 a.textContent='Total '+money(num(r.moq)*num(r.fca))+' · '+(c*num(r.cartonsF)).toFixed(2)+' m³ · '+Math.round(num(r.gw)*num(r.cartonsF))+' kg';
